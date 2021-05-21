@@ -1,0 +1,29 @@
+name: "MyLabJournal"
+output:
+  html_document:
+    css: style.css
+navbar:
+  title: "MyLabJournal"
+  left:
+    - text: "Index"
+      href: index.html
+    - text: "Journal"
+      menu:
+            - text: "01 Machine Learning Fundamentals"
+              href: 01_ml_fund.html
+            - text: "02 Supervised ML"
+              href: 02_ml_sup.html
+            - text: "03 Automated Machine Learning with H20"
+              href: 03_ml_aut.html
+            - text: "04 Performance Measures"
+              href: 04_perf_meas.html
+            - text: "05 LIME"
+              href: 05_lime.html
+            - text: "06 Deep Learning"
+              href: 06_dl.html
+    - text: "Class notes"
+      href: 07_class_notes.html
+    - text: "Links"
+      href: 08_links.html
+output_dir: "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
+exclude: ["raw_data", "challenges", "docks.jpg"]
