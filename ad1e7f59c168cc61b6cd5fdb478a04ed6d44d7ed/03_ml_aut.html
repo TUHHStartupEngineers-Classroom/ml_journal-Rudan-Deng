@@ -1725,26 +1725,22 @@ test_tbl&lt;- testing(split_obj)</code></pre>
 <div id="run-automl-specifying-the-stopping-criterion" class="section level2">
 <h2><span class="header-section-number">3.3</span> run AutoML specifying the stopping criterion</h2>
 <pre class="r"><code>Sys.setenv(JAVA_HOME=&quot;/Library/Java/JavaVirtualMachines/jdk-9.0.4.jdk/Contents/Home&quot;)
+Sys.setenv(https_proxy=&quot;&quot;) 
+Sys.setenv(http_proxy=&quot;&quot;) 
+Sys.setenv(http_proxy_user=&quot;&quot;) 
+Sys.setenv(https_proxy_user=&quot;&quot;)
 
 library(h2o)
 h2o.init()</code></pre>
-<pre><code>## 
-## H2O is not running yet, starting it now...
-## 
-## Note:  In case of errors look at the following log files:
-##     /var/folders/9t/s30ytw350xv9z5wp0q4g_pf00000gp/T//RtmpQdmHYN/file5c82545ac78/h2o_aeoles_started_from_r.out
-##     /var/folders/9t/s30ytw350xv9z5wp0q4g_pf00000gp/T//RtmpQdmHYN/file5c813e0d66/h2o_aeoles_started_from_r.err
-## 
-## 
-## Starting H2O JVM and connecting: ........ Connection successful!
+<pre><code>##  Connection successful!
 ## 
 ## R is connected to the H2O cluster: 
-##     H2O cluster uptime:         2 seconds 771 milliseconds 
+##     H2O cluster uptime:         35 seconds 152 milliseconds 
 ##     H2O cluster timezone:       Asia/Shanghai 
 ##     H2O data parsing timezone:  UTC 
 ##     H2O cluster version:        3.32.1.3 
 ##     H2O cluster version age:    15 days  
-##     H2O cluster name:           H2O_started_from_R_aeoles_rot426 
+##     H2O cluster name:           H2O_started_from_R_aeoles_qws793 
 ##     H2O cluster total nodes:    1 
 ##     H2O cluster total memory:   2.00 GB 
 ##     H2O cluster total cores:    4 
@@ -1789,27 +1785,29 @@ x &lt;- setdiff(names(train_h2o), y)</code></pre>
 <pre><code>## 
   |                                                                            
   |                                                                      |   0%
-## 21:36:43.201: User specified a validation frame with cross-validation still enabled. Please note that the models will still be validated using cross-validation only, the validation frame will be used to provide purely informative validation metrics on the trained models.
+## 22:27:06.456: User specified a validation frame with cross-validation still enabled. Please note that the models will still be validated using cross-validation only, the validation frame will be used to provide purely informative validation metrics on the trained models.
   |                                                                            
   |=                                                                     |   2%
   |                                                                            
   |==                                                                    |   3%
   |                                                                            
-  |===                                                                   |   5%
+  |===                                                                   |   4%
   |                                                                            
   |====                                                                  |   6%
   |                                                                            
   |=====                                                                 |   7%
   |                                                                            
+  |======                                                                |   8%
+  |                                                                            
   |======                                                                |   9%
   |                                                                            
   |=======                                                               |  10%
   |                                                                            
-  |========                                                              |  11%
+  |========                                                              |  12%
   |                                                                            
   |=========                                                             |  13%
   |                                                                            
-  |==========                                                            |  14%
+  |==========                                                            |  15%
   |                                                                            
   |===========                                                           |  16%
   |                                                                            
@@ -1823,11 +1821,11 @@ x &lt;- setdiff(names(train_h2o), y)</code></pre>
   |                                                                            
   |================                                                      |  22%
   |                                                                            
-  |================                                                      |  24%
+  |=================                                                     |  24%
   |                                                                            
   |==================                                                    |  25%
   |                                                                            
-  |==================                                                    |  26%
+  |===================                                                   |  26%
   |                                                                            
   |===================                                                   |  28%
   |                                                                            
@@ -1843,11 +1841,11 @@ x &lt;- setdiff(names(train_h2o), y)</code></pre>
   |                                                                            
   |=========================                                             |  36%
   |                                                                            
-  |==========================                                            |  37%
+  |==========================                                            |  36%
+  |                                                                            
+  |===========================                                           |  38%
   |                                                                            
   |===========================                                           |  39%
-  |                                                                            
-  |============================                                          |  40%
   |                                                                            
   |=============================                                         |  41%
   |                                                                            
@@ -1855,47 +1853,49 @@ x &lt;- setdiff(names(train_h2o), y)</code></pre>
   |                                                                            
   |===============================                                       |  44%
   |                                                                            
-  |================================                                      |  45%
+  |===============================                                       |  45%
+  |                                                                            
+  |================================                                      |  46%
   |                                                                            
   |=================================                                     |  47%
   |                                                                            
-  |=================================                                     |  48%
-  |                                                                            
-  |==================================                                    |  49%
+  |==================================                                    |  48%
   |                                                                            
   |===================================                                   |  50%
   |                                                                            
   |====================================                                  |  51%
   |                                                                            
+  |=====================================                                 |  52%
+  |                                                                            
   |=====================================                                 |  53%
   |                                                                            
-  |======================================                                |  54%
-  |                                                                            
-  |=======================================                               |  55%
+  |======================================                                |  55%
   |                                                                            
   |=======================================                               |  56%
   |                                                                            
-  |========================================                              |  58%
+  |========================================                              |  57%
+  |                                                                            
+  |=========================================                             |  58%
   |                                                                            
   |=========================================                             |  59%
   |                                                                            
   |==========================================                            |  60%
   |                                                                            
-  |===========================================                           |  61%
+  |===========================================                           |  62%
   |                                                                            
-  |============================================                          |  62%
+  |============================================                          |  63%
   |                                                                            
   |=============================================                         |  64%
   |                                                                            
-  |==============================================                        |  65%
-  |                                                                            
   |==============================================                        |  66%
   |                                                                            
-  |===============================================                       |  68%
+  |===============================================                       |  67%
+  |                                                                            
+  |================================================                      |  68%
   |                                                                            
   |================================================                      |  69%
   |                                                                            
-  |=================================================                     |  70%
+  |=================================================                     |  71%
   |                                                                            
   |==================================================                    |  72%
   |                                                                            
@@ -1905,44 +1905,56 @@ x &lt;- setdiff(names(train_h2o), y)</code></pre>
   |                                                                            
   |=====================================================                 |  75%
   |                                                                            
-  |======================================================                |  76%
+  |======================================================                |  77%
   |                                                                            
   |=======================================================               |  79%
   |                                                                            
-  |========================================================              |  81%
+  |========================================================              |  80%
   |                                                                            
   |=========================================================             |  82%
   |                                                                            
+  |==========================================================            |  83%
+  |                                                                            
   |===========================================================           |  84%
   |                                                                            
-  |============================================================          |  85%
+  |============================================================          |  86%
   |                                                                            
   |=============================================================         |  87%
   |                                                                            
-  |==============================================================        |  88%
-  |                                                                            
   |==============================================================        |  89%
   |                                                                            
+  |=================================================================     |  93%
+  |                                                                            
+  |==================================================================    |  94%
+  |                                                                            
+  |===================================================================   |  96%
+  |                                                                            
+  |====================================================================  |  97%
+  |                                                                            
+  |===================================================================== |  99%
+  |                                                                            
   |======================================================================| 100%</code></pre>
-<pre class="r"><code>## View the leaderboard
-#slotNames(automl_models_h2o)
+</div>
+<div id="view-the-leaderboard" class="section level2">
+<h2><span class="header-section-number">3.4</span> View the leaderboard</h2>
+<pre class="r"><code>#slotNames(automl_models_h2o)
 automl_models_h2o@leaderboard </code></pre>
 <pre><code>##                                              model_id mean_residual_deviance
-## 1    StackedEnsemble_AllModels_AutoML_20210603_213643             0.04958242
-## 2 StackedEnsemble_BestOfFamily_AutoML_20210603_213643             0.04964061
-## 3      XGBoost_grid__1_AutoML_20210603_213643_model_6             0.05055299
-## 4                    XGBoost_3_AutoML_20210603_213643             0.05184976
-## 5          GBM_grid__1_AutoML_20210603_213643_model_2             0.05207521
-## 6      XGBoost_grid__1_AutoML_20210603_213643_model_1             0.05271279
+## 1 StackedEnsemble_BestOfFamily_AutoML_20210603_222706             0.04921718
+## 2    StackedEnsemble_AllModels_AutoML_20210603_222706             0.04925492
+## 3      XGBoost_grid__1_AutoML_20210603_222706_model_5             0.05062145
+## 4      XGBoost_grid__1_AutoML_20210603_222706_model_7             0.05121190
+## 5      XGBoost_grid__1_AutoML_20210603_222706_model_3             0.05125013
+## 6          GBM_grid__1_AutoML_20210603_222706_model_3             0.05187142
 ##        rmse        mse       mae     rmsle
-## 1 0.2226711 0.04958242 0.1047851 0.1550938
-## 2 0.2228017 0.04964061 0.1090558 0.1554861
-## 3 0.2248399 0.05055299 0.1086555 0.1572884
-## 4 0.2277054 0.05184976 0.1092105 0.1591092
-## 5 0.2281999 0.05207521 0.1202191 0.1594402
-## 6 0.2295927 0.05271279 0.1142390 0.1608931
+## 1 0.2218495 0.04921718 0.1077856 0.1548675
+## 2 0.2219345 0.04925492 0.1053018 0.1546423
+## 3 0.2249921 0.05062145 0.1082422 0.1573088
+## 4 0.2263005 0.05121190 0.1101318 0.1580444
+## 5 0.2263849 0.05125013 0.1113450 0.1580450
+## 6 0.2277530 0.05187142 0.1163695 0.1589831
 ## 
-## [32 rows x 6 columns]</code></pre>
+## [34 rows x 6 columns]</code></pre>
 <pre class="r"><code>extract_h2o_model_name_by_position &lt;- function(h2o_leaderboard, n = 1, verbose = T) {
     
     model_name &lt;- h2o_leaderboard %&gt;%
@@ -1957,7 +1969,7 @@ automl_models_h2o@leaderboard </code></pre>
 }</code></pre>
 </div>
 <div id="predicting-using-leader-model" class="section level2">
-<h2><span class="header-section-number">3.4</span> Predicting using Leader Model</h2>
+<h2><span class="header-section-number">3.5</span> Predicting using Leader Model</h2>
 <pre class="r"><code>best_model &lt;- automl_models_h2o@leaderboard %&gt;% 
   extract_h2o_model_name_by_position(1) %&gt;% 
   h2o.getModel()
@@ -1980,7 +1992,12 @@ predictions &lt;- h2o.predict(best_model, newdata = as.h2o(test_tbl))</code></pr
 glimpse(predictions_tbl)</code></pre>
 <pre><code>## Rows: 4,764
 ## Columns: 1
-## $ predict &lt;dbl&gt; 0.70810385, 0.90748495, 0.19914823, 0.81075956, 0.03938457, 0.…</code></pre>
+## $ predict &lt;dbl&gt; 0.63611699, 0.86682689, 0.25985439, 0.76611683, 0.02965283, 0.…</code></pre>
+</div>
+<div id="save-the-leader-model" class="section level2">
+<h2><span class="header-section-number">3.6</span> Save the leader model</h2>
+<pre class="r"><code>best_model %&gt;% h2o.saveModel(path = &quot;StackedEnsemble_AllModels_AutoML_20210603_202714&quot;)</code></pre>
+<pre><code>## [1] &quot;/Users/aeoles/Documents/GitHub/ml_journal-Rudan-Deng/StackedEnsemble_AllModels_AutoML_20210603_202714/StackedEnsemble_BestOfFamily_AutoML_20210603_222706&quot;</code></pre>
 </div>
 </div>
 

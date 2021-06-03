@@ -1,6 +1,6 @@
 ---
 title: "04 Performance Measures"
-date: "2020-11-05"
+date: "2020-06-03"
 output:
   html_document:
     toc: true
@@ -16,39 +16,101 @@ output:
 knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=TRUE)
 ```
 
-**IMPORTANT:** You can delete everything in here and start fresh. You might want to start by not deleting anything above this line until you know what that stuff is doing.
-
-This is an `.Rmd` file. It is plain text with special features. Any time you write just like this, it will be compiled to normal text in the website. If you put a \# in front of your text, it will create a top level-header.
-
-# My first post
-
-Last compiled: `r Sys.Date()`
-
-Notice that whatever you define as a top level header, automatically gets put into the table of contents bar on the left. 
-
-## Second level header
-
-You can add more headers by adding more hashtags. These won't be put into the table of contents
-
-### third level header
-
-Here's an even lower level header
-
-# My second post (note the order)
-
-Last compiled: `r Sys.Date()`
-
-I'm writing this tutorial going from the top down. And, this is how it will be printed. So, notice the second post is second in the list. If you want your most recent post to be at the top, then make a new post starting at the top. If you want the oldest first, do, then keep adding to the bottom
-
-# Adding R stuff
-
-So far this is just a blog where you can write in plain text and serve your writing to a webpage. One of the main purposes of this lab journal is to record your progress learning R. The reason I am asking you to use this process is because you can both make a website, and a lab journal, and learn R all in R-studio. This makes everything really convenient and in the same place. 
-
-So, let's say you are learning how to make a histogram in R. For example, maybe you want to sample 100 numbers from a normal distribution with mean = 0, and standard deviation = 1, and then you want to plot a histogram. You can do this right here by using an r code block, like this:
-
+## Load the training & test dataset
 ```{r}
-samples <- rnorm(100, mean=0, sd=1)
-hist(samples)
+library(tidyverse)
+# Modeling
+library(parsnip)
+# Pre-processing & Sampling
+library(recipes)
+library(rsample)
+# Modeling Error Metrics
+library(yardstick)
+library(workflows)
+library(tune)
+
+product_data <- read_csv("./01_ml_fund_source/Business\ Decisions\ with\ Machine\ Learning/product_backorders.csv")
+product_data2 <- product_data %>% 
+  mutate(
+      product_backorder = went_on_backorder %>% str_to_lower() %>% str_detect("yes") %>% as.numeric()
+  ) %>% 
+  select(-c(went_on_backorder))
+glimpse(product_data)
+
+split_obj<- initial_split(product_data2, prop = 0.75)
+train_tbl<- training(split_obj)
+test_tbl<- testing(split_obj)
+```
+## Specifiy the response and predictor variables
+```{r}
+recipe_obj <- recipe(product_backorder ~., data = train_tbl) %>% 
+    step_zv(all_predictors()) %>% 
+    step_dummy(all_nominal(),-all_outcomes()) %>%
+    prep()
 ```
 
-When you knit this R Markdown document, you will see that the histogram is printed to the page, along with the R code. This document can be set up to hide the R code in the webpage, just delete the comment (hashtag) from the cold folding option in the yaml header up top. For purposes of letting yourself see the code, and me see the code, best to keep it the way that it is. You'll learn that all of these things and more can be customized in each R code block.
+## run AutoML specifying the stopping criterion
+```{r}
+Sys.setenv(JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-9.0.4.jdk/Contents/Home")
+
+library(h2o)
+h2o.init()
+```
+
+```{r}
+# Split data into a training and a validation data frame
+# Setting the seed is just for reproducability
+split_h2o <- h2o.splitFrame(as.h2o(train_tbl), ratios = c(0.75), seed = 42)
+train_h2o <- split_h2o[[1]]
+valid_h2o <- split_h2o[[2]]
+test_h2o  <- as.h2o(test_tbl)
+
+# Set the target and predictors
+y <- "product_backorder"
+x <- setdiff(names(train_h2o), y)
+```
+
+```{r}
+automl_models_h2o <- h2o.automl(
+  x = x,
+  y = y,
+  training_frame    = train_h2o,
+  validation_frame  = valid_h2o,
+  leaderboard_frame = test_h2o,
+  max_runtime_secs  = 120,
+  nfolds            = 5,
+  stopping_metric = "mae", stopping_rounds = 3,
+                        stopping_tolerance = 1e-2
+)
+```
+
+# Leaderboard visualization
+```{r}
+#slotNames(automl_models_h2o)
+automl_models_h2o@leaderboard 
+
+summary(automl_models_h2o@leaderboard %>% 
+              as_tibble() )
+```
+
+# Tune a model with grid search
+```{r}
+```
+# Visualize the trade of between the precision and the recall and the optimal threshold
+```{r}
+```
+# ROC Plot
+```{r}
+```
+# Precision vs Recall Plot
+```{r}
+```
+# Gain Plot
+```{r}
+```
+# Lift Plot
+```{r}
+```
+# Dashboard with cowplot
+```{r}
+```

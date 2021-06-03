@@ -580,12 +580,14 @@ glimpse(bake(recipe_obj,new_data = NULL))
 ## run AutoML specifying the stopping criterion
 ```{r}
 Sys.setenv(JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-9.0.4.jdk/Contents/Home")
+Sys.setenv(https_proxy="") 
+Sys.setenv(http_proxy="") 
+Sys.setenv(http_proxy_user="") 
+Sys.setenv(https_proxy_user="")
 
 library(h2o)
 h2o.init()
 ```
-
-
 
 ```{r}
 # Split data into a training and a validation data frame
@@ -613,7 +615,9 @@ automl_models_h2o <- h2o.automl(
                         stopping_tolerance = 1e-2
 )
 
+```
 ## View the leaderboard
+```{r}
 #slotNames(automl_models_h2o)
 automl_models_h2o@leaderboard 
 
@@ -633,8 +637,9 @@ extract_h2o_model_name_by_position <- function(h2o_leaderboard, n = 1, verbose =
 
 ```
 
-## Predicting using Leader Model
 
+
+## Predicting using Leader Model
 ```{r}
 best_model <- automl_models_h2o@leaderboard %>% 
   extract_h2o_model_name_by_position(1) %>% 
@@ -648,4 +653,9 @@ predictions_tbl <- predictions %>% as_tibble()
 
 glimpse(predictions_tbl)
 
+```
+
+## Save the leader model
+```{r}
+best_model %>% h2o.saveModel(path = "StackedEnsemble_AllModels_AutoML_20210603_202714")
 ```
