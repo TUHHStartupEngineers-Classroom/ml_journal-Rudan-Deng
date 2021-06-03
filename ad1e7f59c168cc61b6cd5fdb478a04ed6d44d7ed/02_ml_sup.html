@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2020-11-05" />
+<meta name="date" content="2021-05-31" />
 
 <title>02 Supervised ML</title>
 
@@ -411,39 +411,1272 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">02 Supervised ML</h1>
-<h4 class="date">2020-11-05</h4>
+<h4 class="date">2021-05-31</h4>
 
 </div>
 
 
-<p><strong>IMPORTANT:</strong> You can delete everything in here and start fresh. You might want to start by not deleting anything above this line until you know what that stuff is doing.</p>
-<p>This is an <code>.Rmd</code> file. It is plain text with special features. Any time you write just like this, it will be compiled to normal text in the website. If you put a # in front of your text, it will create a top level-header.</p>
-<div id="my-first-post" class="section level1">
-<h1><span class="header-section-number">1</span> My first post</h1>
-<p>Last compiled: 2021-05-30</p>
-<p>Notice that whatever you define as a top level header, automatically gets put into the table of contents bar on the left.</p>
-<div id="second-level-header" class="section level2">
-<h2><span class="header-section-number">1.1</span> Second level header</h2>
-<p>You can add more headers by adding more hashtags. These won’t be put into the table of contents</p>
-<div id="third-level-header" class="section level3">
-<h3><span class="header-section-number">1.1.1</span> third level header</h3>
-<p>Here’s an even lower level header</p>
+<div id="import-libraries" class="section level1">
+<h1><span class="header-section-number">1</span> Import libraries</h1>
+<pre class="r"><code>library(tidyverse)
+# Modeling
+library(parsnip)
+# Pre-processing &amp; Sampling
+library(recipes)
+library(rsample)
+# Modeling Error Metrics
+library(yardstick)
+library(workflows)
+library(tune)</code></pre>
+</div>
+<div id="read-data" class="section level1">
+<h1><span class="header-section-number">2</span> Read data</h1>
+<pre class="r"><code>bike_features_tbl &lt;- readRDS(&quot;./01_ml_fund_source/Business\ Decisions\ with\ Machine\ Learning/bike_features_tbl.rds&quot;) %&gt;% select(-c(&quot;Brake Rotor&quot;))</code></pre>
+<pre class="r"><code>glimpse(bike_features_tbl)</code></pre>
+<pre><code>## Rows: 231
+## Columns: 66
+## $ bike_id                     &lt;dbl&gt; 2875, 2873, 2874, 2876, 2877, 2225, 2091, …
+## $ model                       &lt;chr&gt; &quot;Aeroad CF SL Disc 8.0 Di2&quot;, &quot;Aeroad CF SL…
+## $ model_year                  &lt;dbl&gt; 2020, 2020, 2020, 2020, 2020, 2019, 2019, …
+## $ frame_material              &lt;chr&gt; &quot;carbon&quot;, &quot;carbon&quot;, &quot;carbon&quot;, &quot;carbon&quot;, &quot;c…
+## $ weight                      &lt;dbl&gt; 7.60, 7.27, 7.10, 7.73, 7.83, 6.80, 6.80, …
+## $ price                       &lt;dbl&gt; 4579, 6919, 6429, 5069, 3609, 6139, 5359, …
+## $ category_1                  &lt;chr&gt; &quot;Road&quot;, &quot;Road&quot;, &quot;Road&quot;, &quot;Road&quot;, &quot;Road&quot;, &quot;R…
+## $ category_2                  &lt;chr&gt; &quot;Race&quot;, &quot;Race&quot;, &quot;Race&quot;, &quot;Race&quot;, &quot;Race&quot;, &quot;R…
+## $ category_3                  &lt;chr&gt; &quot;Aeroad&quot;, &quot;Aeroad&quot;, &quot;Aeroad&quot;, &quot;Aeroad&quot;, &quot;A…
+## $ gender                      &lt;chr&gt; &quot;unisex&quot;, &quot;unisex&quot;, &quot;unisex&quot;, &quot;unisex&quot;, &quot;u…
+## $ url                         &lt;chr&gt; &quot;https://www.canyon.com/en-de/road-bikes/r…
+## $ Frame                       &lt;chr&gt; &quot;Canyon Aeroad CF SL Disc&quot;, &quot;Canyon Aeroad…
+## $ Fork                        &lt;chr&gt; &quot;Canyon FK0041 CF SLX Disc&quot;, &quot;Canyon FK004…
+## $ `Rear Derailleur`           &lt;chr&gt; &quot;Shimano Ultegra Di2 R8050 SS&quot;, &quot;SRAM RED …
+## $ `Front Derailleur`          &lt;chr&gt; &quot;Shimano Ultegra Di2 R8050&quot;, &quot;SRAM RED eTa…
+## $ Cassette                    &lt;chr&gt; &quot;Shimano Ultegra R8000, 11-speed, 11-28T&quot;,…
+## $ Crank                       &lt;chr&gt; &quot;Shimano Ultegra R8000&quot;, &quot;SRAM RED D1&quot;, &quot;S…
+## $ `Bottom bracket`            &lt;chr&gt; &quot;Shimano Pressfit BB72&quot;, &quot;SRAM Pressfit RE…
+## $ `Thru Axle`                 &lt;chr&gt; &quot;Canyon Thru Axle&quot;, &quot;Canyon Thru Axle&quot;, &quot;C…
+## $ Cockpit                     &lt;chr&gt; &quot;Canyon H36 Aerocockpit CF&quot;, &quot;Canyon H36 A…
+## $ Saddle                      &lt;chr&gt; &quot;Selle Italia SLR&quot;, &quot;Selle Italia SLR&quot;, &quot;S…
+## $ Seatpost                    &lt;chr&gt; &quot;Canyon S27 Aero VCLS CF&quot;, &quot;Canyon S27 Aer…
+## $ Pedals                      &lt;chr&gt; &quot;None included&quot;, &quot;None included&quot;, &quot;None in…
+## $ `Derailleur hanger`         &lt;chr&gt; &quot;Shop Derailleur Hanger GP0211-01&quot;, &quot;Shop …
+## $ Battery                     &lt;chr&gt; &quot;&quot;, &quot;SRAM eTap Powerpack&quot;, &quot;&quot;, &quot;SRAM eTap …
+## $ Brake                       &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Shift Lever`               &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;Shimano Di2 Remot…
+## $ Chain                       &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;Shimano CN-HG901 …
+## $ Stem                        &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;Canyon V13&quot;, …
+## $ Handlebar                   &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;Canyon H16 Ae…
+## $ Headset                     &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ Motor                       &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Battery Charger`           &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Flat Pedals`               &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ Chainguard                  &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Aero Bar`                  &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Brake Lever / Master`      &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Wheel Tire System`         &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Suspension Fork`           &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Disc Brake`                &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ Grips                       &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ Chainring                   &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ Display                     &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ Modeswitch                  &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Rear Shock`                &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ Light                       &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ Fender                      &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Bike Racks`                &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Brake 1`                   &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;SRAM S-900 Direct Mou…
+## $ `Brake 2`                   &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;SRAM S-900 Direct Mou…
+## $ `Shift-/ Brake Lever 1`     &lt;chr&gt; &quot;Shimano Ultegra Di2 R8070, 11-speed&quot;, &quot;SR…
+## $ `Shift-/ Brake Lever 2`     &lt;chr&gt; &quot;Shimano Ultegra Di2 R8070, 11-speed&quot;, &quot;SR…
+## $ `Wheel 1`                   &lt;chr&gt; &quot;DT Swiss ARC 1400 Dicut&quot;, &quot;DT Swiss ARC 1…
+## $ `Wheel 2`                   &lt;chr&gt; &quot;DT Swiss ARC 1400 Dicut&quot;, &quot;DT Swiss ARC 1…
+## $ `Tyre 1`                    &lt;chr&gt; &quot;Continental Grand Prix 5000 / Attack  23 …
+## $ `Tyre 2`                    &lt;chr&gt; &quot;Continental Grand Prix 5000, 25 mm&quot;, &quot;Con…
+## $ `Handlebar Tape 1`          &lt;chr&gt; &quot;Canyon Ergospeed Gel&quot;, &quot;Canyon Ergospeed …
+## $ `Handlebar Tape 2`          &lt;chr&gt; &quot;Canyon bar-end plug&quot;, &quot;Canyon bar-end plu…
+## $ `Manuals and Accessories 1` &lt;chr&gt; &quot;Canyon tool case&quot;, &quot;Canyon tool case&quot;, &quot;C…
+## $ `Manuals and Accessories 2` &lt;chr&gt; &quot;DT Swiss warranty &amp; intended use manual&quot;,…
+## $ `Manuals and Accessories 3` &lt;chr&gt; &quot;Canyon starter box&quot;, &quot;Canyon starter box&quot;…
+## $ `Manuals and Accessories 4` &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;BAG R…
+## $ `Manuals and Accessories 5` &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Manuals and Accessories 6` &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Manuals and Accessories 7` &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…
+## $ `Manuals and Accessories 8` &lt;chr&gt; &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;…</code></pre>
+</div>
+<div id="initial-feature-processing" class="section level1">
+<h1><span class="header-section-number">3</span> Initial feature processing</h1>
+<pre class="r"><code>bike_features_tbl2 &lt;- bike_features_tbl %&gt;% 
+    select(model:url, `Rear Derailleur`, `Shift Lever`) %&gt;% 
+    mutate(
+      `shimano dura-ace`        = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano dura-ace &quot;) %&gt;% as.numeric(),
+      `shimano ultegra`         = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano ultegra &quot;) %&gt;% as.numeric(),
+      `shimano 105`             = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano 105 &quot;) %&gt;% as.numeric(),
+      `shimano tiagra`          = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano tiagra &quot;) %&gt;% as.numeric(),
+      `Shimano sora`            = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano sora&quot;) %&gt;% as.numeric(),
+      `shimano deore`           = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano deore(?! xt)&quot;) %&gt;% as.numeric(),
+      `shimano slx`             = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano slx&quot;) %&gt;% as.numeric(),
+      `shimano grx`             = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano grx&quot;) %&gt;% as.numeric(),
+      `Shimano xt`              = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano deore xt |shimano xt &quot;) %&gt;% as.numeric(),
+      `Shimano xtr`             = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano xtr&quot;) %&gt;% as.numeric(),
+      `Shimano saint`           = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano saint&quot;) %&gt;% as.numeric(),
+      `SRAM red`                = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram red&quot;) %&gt;% as.numeric(),
+      `SRAM force`              = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram force&quot;) %&gt;% as.numeric(),
+      `SRAM rival`              = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram rival&quot;) %&gt;% as.numeric(),
+      `SRAM apex`               = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram apex&quot;) %&gt;% as.numeric(),
+      `SRAM xx1`                = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram xx1&quot;) %&gt;% as.numeric(),
+      `SRAM x01`                = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram x01|sram xo1&quot;) %&gt;% as.numeric(),
+      `SRAM gx`                 = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram gx&quot;) %&gt;% as.numeric(),
+      `SRAM nx`                 = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram nx&quot;) %&gt;% as.numeric(),
+      `SRAM sx`                 = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram sx&quot;) %&gt;% as.numeric(),
+      `SRAM sx`                 = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;sram sx&quot;) %&gt;% as.numeric(),
+      `Campagnolo potenza`      = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;campagnolo potenza&quot;) %&gt;% as.numeric(),
+      `Campagnolo super record` = `Rear Derailleur` %&gt;% str_to_lower() %&gt;% str_detect(&quot;campagnolo super record&quot;) %&gt;% as.numeric(),
+      `shimano nexus`           = `Shift Lever`     %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano nexus&quot;) %&gt;% as.numeric(),
+      `shimano alfine`          = `Shift Lever`     %&gt;% str_to_lower() %&gt;% str_detect(&quot;shimano alfine&quot;) %&gt;% as.numeric()
+    ) %&gt;% 
+  # Remove original columns  
+  select(-c(`Rear Derailleur`, `Shift Lever`)) %&gt;% 
+  # Set all NAs to 0
+  mutate_if(is.numeric, ~replace(., is.na(.), 0))</code></pre>
+<pre class="r"><code>bike_features_tbl %&gt;% select(c(&quot;model&quot;),&quot;model_year&quot;,&quot;frame_material&quot;,&quot;weight&quot;,&quot;price&quot;,&quot;category_1&quot;,&quot;category_2&quot;,
+                             &quot;category_3&quot;,&quot;gender&quot;,&quot;url&quot;)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["model"],"name":[1],"type":["chr"],"align":["left"]},{"label":["model_year"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["frame_material"],"name":[3],"type":["chr"],"align":["left"]},{"label":["weight"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["price"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["category_1"],"name":[6],"type":["chr"],"align":["left"]},{"label":["category_2"],"name":[7],"type":["chr"],"align":["left"]},{"label":["category_3"],"name":[8],"type":["chr"],"align":["left"]},{"label":["gender"],"name":[9],"type":["chr"],"align":["left"]},{"label":["url"],"name":[10],"type":["chr"],"align":["left"]}],"data":[{"1":"Aeroad CF SL Disc 8.0 Di2","2":"2020","3":"carbon","4":"7.60","5":"4579","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-sl-disc-8.0-di2/2875.html"},{"1":"Aeroad CF SLX Disc 9.0 ETAP","2":"2020","3":"carbon","4":"7.27","5":"6919","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-slx-disc-9.0-etap/2873.html"},{"1":"Aeroad CF SLX Disc 9.0 Di2","2":"2020","3":"carbon","4":"7.10","5":"6429","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-slx-disc-9.0-di2/2874.html"},{"1":"Aeroad CF SL Disc 8.0 ETAP","2":"2020","3":"carbon","4":"7.73","5":"5069","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-sl-disc-8.0-etap/2876.html"},{"1":"Aeroad CF SL Disc 8.0","2":"2020","3":"carbon","4":"7.83","5":"3609","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-sl-disc-8.0/2877.html"},{"1":"Aeroad CF SLX 9.0 SL","2":"2019","3":"carbon","4":"6.80","5":"6139","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-slx-9.0-sl/2225.html"},{"1":"Aeroad CF SLX 9.0 Di2","2":"2019","3":"carbon","4":"6.80","5":"5359","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-slx-9.0-di2/2091.html"},{"1":"Aeroad CF SL 7.0","2":"2021","3":"carbon","4":"7.60","5":"2629","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-sl-7.0/2086.html"},{"1":"Aeroad CF SL 8.0 Di2","2":"2020","3":"carbon","4":"7.30","5":"3699","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-sl-8.0-di2/2088.html"},{"1":"Aeroad WMN CF SL 8.0","2":"2020","3":"carbon","4":"7.20","5":"3219","6":"Road","7":"Race","8":"Aeroad","9":"female","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-wmn-cf-sl-8.0/2120.html"},{"1":"Aeroad CF SL 8.0","2":"2020","3":"carbon","4":"7.30","5":"2829","6":"Road","7":"Race","8":"Aeroad","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/aeroad/aeroad-cf-sl-8.0/2087.html"},{"1":"Endurace AL Disc 7.0","2":"2020","3":"aluminium","4":"8.72","5":"1559","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-al-disc-7.0/2394.html"},{"1":"Endurace WMN AL Disc 7.0","2":"2020","3":"aluminium","4":"8.73","5":"1559","6":"Road","7":"Endurance","8":"Endurace","9":"female","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-wmn-al-disc-7.0/2386.html"},{"1":"Endurace AL Disc 6.0","2":"2020","3":"aluminium","4":"9.04","5":"1269","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-al-disc-6.0/2393.html"},{"1":"Endurace WMN AL Disc 6.0","2":"2020","3":"aluminium","4":"8.97","5":"1269","6":"Road","7":"Endurance","8":"Endurace","9":"female","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-wmn-al-disc-6.0/2385.html"},{"1":"Endurace AL 7.0","2":"2020","3":"aluminium","4":"8.21","5":"1169","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-al-7.0/2392.html"},{"1":"Endurace WMN AL 7.0","2":"2020","3":"aluminium","4":"8.20","5":"1169","6":"Road","7":"Endurance","8":"Endurace","9":"female","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-wmn-al-7.0/2384.html"},{"1":"Endurace AL 6.0","2":"2020","3":"aluminium","4":"8.58","5":"969","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-al-6.0/2391.html"},{"1":"Endurace WMN AL 6.0","2":"2020","3":"aluminium","4":"8.50","5":"969","6":"Road","7":"Endurance","8":"Endurace","9":"female","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-wmn-al-6.0/2383.html"},{"1":"Endurace CF SLX Disc 9.0 ETAP","2":"2020","3":"carbon","4":"7.17","5":"7309","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-slx-disc-9.0-etap/2399.html"},{"1":"Endurace CF SLX Disc 9.0 Di2","2":"2020","3":"carbon","4":"7.16","5":"6819","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-slx-disc-9.0-di2/2400.html"},{"1":"Endurace CF SLX Disc 8.0 ETAP","2":"2020","3":"carbon","4":"7.70","5":"5359","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-slx-disc-8.0-etap/2398.html"},{"1":"Endurace CF SL Disc 8.0 Aero Di2","2":"2020","3":"carbon","4":"7.64","5":"4189","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-sl-disc-8.0-aero-di2/2397.html"},{"1":"Endurace CF SL Disc 8.0 Pro","2":"2020","3":"carbon","4":"7.58","5":"2729","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-sl-disc-8.0-pro/2509.html"},{"1":"Endurace CF SL Disc 8.0","2":"2020","3":"carbon","4":"8.10","5":"2629","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-sl-disc-8.0/2185.html"},{"1":"Endurace WMN CF SL Disc 8.0","2":"2020","3":"carbon","4":"7.88","5":"2629","6":"Road","7":"Endurance","8":"Endurace","9":"female","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-wmn-cf-sl-disc-8.0/2388.html"},{"1":"Endurace WMN CF SL Disc 7.0","2":"2020","3":"carbon","4":"8.28","5":"2049","6":"Road","7":"Endurance","8":"Endurace","9":"female","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-wmn-cf-sl-disc-7.0/2507.html"},{"1":"Endurace CF SL Disc 7.0","2":"2020","3":"carbon","4":"8.39","5":"2049","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-sl-disc-7.0/2396.html"},{"1":"Endurace CF 7.0","2":"2020","3":"carbon","4":"7.96","5":"1459","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-7.0/2508.html"},{"1":"Endurace CF SL Disc 8.0 Di2","2":"2020","3":"carbon","4":"8.00","5":"3219","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-sl-disc-8.0-di2/2186.html"},{"1":"Endurace WMN CF SL Disc 8.0 Di2","2":"2020","3":"carbon","4":"7.90","5":"3219","6":"Road","7":"Endurance","8":"Endurace","9":"female","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-wmn-cf-sl-disc-8.0-di2/2135.html"},{"1":"Endurace CF 8.0","2":"2020","3":"carbon","4":"7.46","5":"1949","6":"Road","7":"Endurance","8":"Endurace","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/endurance-bikes/endurace/endurace-cf-8.0/2182.html"},{"1":"Endurace:ON 7.0","2":"2020","3":"aluminium","4":"15.18","5":"2919","6":"E-Bikes","7":"E-Road","8":"Endurace:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-road-bikes/endurace-on/endurace-on-7.0/2486.html"},{"1":"Inflite CF SLX 9 Team","2":"2021","3":"carbon","4":"7.80","5":"4389","6":"Road","7":"Cyclocross","8":"Inflite","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/cyclocross-bikes/inflite/inflite-cf-slx-9-team/2658.html"},{"1":"Inflite CF SLX 9","2":"2021","3":"carbon","4":"7.81","5":"4089","6":"Road","7":"Cyclocross","8":"Inflite","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/cyclocross-bikes/inflite/inflite-cf-slx-9/2657.html"},{"1":"Inflite CF SL 8","2":"2021","3":"carbon","4":"7.90","5":"3309","6":"Road","7":"Cyclocross","8":"Inflite","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/cyclocross-bikes/inflite/inflite-cf-sl-8/2779.html"},{"1":"Inflite CF SL 7","2":"2021","3":"carbon","4":"8.26","5":"2729","6":"Road","7":"Cyclocross","8":"Inflite","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/cyclocross-bikes/inflite/inflite-cf-sl-7/2656.html"},{"1":"Inflite CF SL 6","2":"2021","3":"carbon","4":"8.40","5":"2139","6":"Road","7":"Cyclocross","8":"Inflite","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/cyclocross-bikes/inflite/inflite-cf-sl-6/2778.html"},{"1":"Inflite 5","2":"2021","3":"aluminium","4":"8.85","5":"1559","6":"Road","7":"Cyclocross","8":"Inflite","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/cyclocross-bikes/inflite/inflite-5/2655.html"},{"1":"Inflite CF SLX 9","2":"2020","3":"carbon","4":"7.40","5":"3599","6":"Road","7":"Cyclocross","8":"Inflite","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/cyclocross-bikes/inflite/inflite-cf-slx-9/2444.html"},{"1":"Inflite CF SL 8","2":"2020","3":"carbon","4":"7.90","5":"2919","6":"Road","7":"Cyclocross","8":"Inflite","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/cyclocross-bikes/inflite/inflite-cf-sl-8/2443.html"},{"1":"Speedmax CF SLX 9.0 LTD","2":"2020","3":"carbon","4":"8.50","5":"7799","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-slx-9.0-ltd/2145.html"},{"1":"Speedmax CF 8.0","2":"2020","3":"carbon","4":"8.40","5":"2529","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-8.0/2420.html"},{"1":"Speedmax CF 7.0","2":"2020","3":"carbon","4":"8.50","5":"2339","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-7.0/2419.html"},{"1":"Speedmax CF 8.0 SL","2":"2020","3":"carbon","4":"8.40","5":"2829","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-8.0-sl/2139.html"},{"1":"Speedmax WMN CF 8.0 Di2","2":"2020","3":"carbon","4":"8.10","5":"3599","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"female","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-wmn-cf-8.0-di2/2111.html"},{"1":"Speedmax CF SLX 9.0 SL","2":"2020","3":"carbon","4":"8.50","5":"6339","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-slx-9.0-sl/2144.html"},{"1":"Speedmax WMN CF 8.0 LTD","2":"2020","3":"carbon","4":"8.40","5":"4189","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"female","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-wmn-cf-8.0-ltd/2112.html"},{"1":"Speedmax CF SLX 9.0 TT","2":"2020","3":"carbon","4":"8.20","5":"8769","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-slx-9.0-tt/2146.html"},{"1":"Speedmax CF 8.0 Di2","2":"2020","3":"carbon","4":"8.50","5":"3599","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-8.0-di2/2140.html"},{"1":"Speedmax CF SLX 8.0","2":"2020","3":"carbon","4":"8.70","5":"4479","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-slx-8.0/2423.html"},{"1":"Speedmax WMN CF SLX 8.0 SL","2":"2020","3":"carbon","4":"8.60","5":"4879","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"female","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-wmn-cf-slx-8.0-sl/2113.html"},{"1":"Speedmax WMN CF 8.0","2":"2020","3":"carbon","4":"8.20","5":"2529","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"female","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-wmn-cf-8.0/2422.html"},{"1":"Speedmax CF 8.0 LTD","2":"2020","3":"carbon","4":"8.50","5":"4089","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-8.0-ltd/2141.html"},{"1":"Speedmax WMN CF 7.0","2":"2020","3":"carbon","4":"8.30","5":"2139","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"female","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-wmn-cf-7.0/2421.html"},{"1":"Speedmax CF SLX 8.0 SL","2":"2020","3":"carbon","4":"8.70","5":"5359","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-slx-8.0-sl/2143.html"},{"1":"Speedmax CF 7.0","2":"2019","3":"carbon","4":"8.80","5":"1749","6":"Road","7":"Triathlon Bike","8":"Speedmax","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/triathlon-bikes/speedmax/speedmax-cf-7.0/2137.html"},{"1":"Ultimate CFR Disc EPS","2":"2021","3":"carbon","4":"6.29","5":"8769","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cfr-disc-eps/2763.html"},{"1":"Ultimate CFR Disc Di2","2":"2021","3":"carbon","4":"6.59","5":"7409","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cfr-disc-di2/2762.html"},{"1":"Ultimate CF SL 8.0","2":"2020","3":"carbon","4":"7.00","5":"2239","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-sl-8.0/2151.html"},{"1":"Ultimate CF SLX Disc 9.0 ETAP","2":"2020","3":"carbon","4":"6.89","5":"7019","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-slx-disc-9.0-etap/2413.html"},{"1":"Ultimate CF SLX Disc 9.0 Di2","2":"2020","3":"carbon","4":"7.10","5":"6819","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-slx-disc-9.0-di2/2412.html"},{"1":"Ultimate CF SLX 9.0 Di2","2":"2020","3":"carbon","4":"6.50","5":"6629","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-slx-9.0-di2/2408.html"},{"1":"Ultimate CF SLX 9.0 ETAP","2":"2020","3":"carbon","4":"6.50","5":"6039","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-slx-9.0-etap/2407.html"},{"1":"Ultimate WMN CF SLX Disc 9.0 ETAP","2":"2020","3":"carbon","4":"7.07","5":"5849","6":"Road","7":"Race","8":"Ultimate","9":"female","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-wmn-cf-slx-disc-9.0-etap/2405.html"},{"1":"Ultimate CF SLX Disc 8.0 ETAP","2":"2020","3":"carbon","4":"7.44","5":"5359","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-slx-disc-8.0-etap/2411.html"},{"1":"Ultimate CF SL Disc 8.0 Di2 Aero","2":"2020","3":"carbon","4":"7.35","5":"4089","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-sl-disc-8.0-di2-aero/2410.html"},{"1":"Ultimate CF SLX 8.0 Di2","2":"2020","3":"carbon","4":"6.80","5":"4089","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-slx-8.0-di2/2406.html"},{"1":"Ultimate WMN CF SL Disc 8.0 ETAP","2":"2020","3":"carbon","4":"7.58","5":"3899","6":"Road","7":"Race","8":"Ultimate","9":"female","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-wmn-cf-sl-disc-8.0-etap/2404.html"},{"1":"Ultimate WMN CF SL Disc 8.0 Di2","2":"2020","3":"carbon","4":"7.40","5":"3219","6":"Road","7":"Race","8":"Ultimate","9":"female","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-wmn-cf-sl-disc-8.0-di2/2403.html"},{"1":"Ultimate WMN CF SL Disc 8.0","2":"2020","3":"carbon","4":"7.40","5":"2529","6":"Road","7":"Race","8":"Ultimate","9":"female","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-wmn-cf-sl-disc-8.0/2402.html"},{"1":"Ultimate WMN CF SL Disc 7.0","2":"2020","3":"carbon","4":"7.96","5":"2049","6":"Road","7":"Race","8":"Ultimate","9":"female","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-wmn-cf-sl-disc-7.0/2401.html"},{"1":"Ultimate CF SL 7.0","2":"2020","3":"carbon","4":"7.54","5":"1659","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-sl-7.0/2510.html"},{"1":"Ultimate CF SLX Disc 9.0 Team Movistar","2":"2020","3":"carbon","4":"7.00","5":"6629","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-slx-disc-9.0-team-movistar/2207.html"},{"1":"Ultimate CF SL Disc 8.0 Di2","2":"2020","3":"carbon","4":"7.50","5":"3219","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-sl-disc-8.0-di2/2159.html"},{"1":"Ultimate CF SL 8.0 Di2","2":"2020","3":"carbon","4":"7.00","5":"2919","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-sl-8.0-di2/2152.html"},{"1":"Ultimate CF SL Disc 8.0","2":"2020","3":"carbon","4":"7.60","5":"2529","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-sl-disc-8.0/2157.html"},{"1":"Ultimate CF SLX 9.0 Di2","2":"2019","3":"carbon","4":"6.60","5":"5359","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-slx-9.0-di2/2165.html"},{"1":"Ultimate CF SL Disc 7.0","2":"2019","3":"carbon","4":"7.90","5":"2049","6":"Road","7":"Race","8":"Ultimate","9":"unisex","10":"https://www.canyon.com/en-de/road-bikes/race-bikes/ultimate/ultimate-cf-sl-disc-7.0/2156.html"},{"1":"Dude CF 8.0 Trail","2":"2020","3":"carbon","4":"14.20","5":"2139","6":"Mountain","7":"Fat Bikes","8":"Dude","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/fat-bikes/dude/dude-cf-8.0-trail/2464.html"},{"1":"Dude CF 9.0 Trail","2":"2020","3":"carbon","4":"13.80","5":"2629","6":"Mountain","7":"Fat Bikes","8":"Dude","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/fat-bikes/dude/dude-cf-9.0-trail/2465.html"},{"1":"Exceed CFR LTD","2":"2021","3":"carbon","4":"8.90","5":"6339","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cfr-ltd/2644.html"},{"1":"Exceed CFR Team","2":"2021","3":"carbon","4":"8.87","5":"5559","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cfr-team/2643.html"},{"1":"Exceed CF SLX 9","2":"2021","3":"carbon","4":"9.73","5":"4579","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cf-slx-9/2642.html"},{"1":"Exceed CF SLX 8","2":"2021","3":"carbon","4":"9.90","5":"3609","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cf-slx-8/2641.html"},{"1":"Exceed CF 7 WMN","2":"2021","3":"carbon","4":"10.30","5":"2629","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cf-7-wmn/2640.html"},{"1":"Exceed CF 7","2":"2021","3":"carbon","4":"10.55","5":"2629","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cf-7/2639.html"},{"1":"Exceed CF 6","2":"2021","3":"carbon","4":"10.86","5":"2139","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cf-6/2638.html"},{"1":"Exceed CF 5 WMN","2":"2021","3":"carbon","4":"12.08","5":"1659","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cf-5-wmn/2637.html"},{"1":"Exceed CF 5","2":"2021","3":"carbon","4":"12.25","5":"1659","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cf-5/2636.html"},{"1":"Exceed CF SLX 9.0 Race LTD","2":"2020","3":"carbon","4":"8.97","5":"4389","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cf-slx-9.0-race-ltd/2432.html"},{"1":"Exceed CF SLX 9.0 Race","2":"2020","3":"carbon","4":"9.00","5":"4189","6":"Mountain","7":"Cross-Country","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/exceed/exceed-cf-slx-9.0-race/2431.html"},{"1":"Exceed CF SLX 9.0","2":"2020","3":"carbon","4":"9.30","5":"3599","6":"Gravel","7":"Adventure","8":"Exceed","9":"unisex","10":"https://www.canyon.com/en-de/global-campaigns/end-of-season-sale/exceed-cf-slx-9.0/2430.html"},{"1":"Grail CF SLX 8 eTap","2":"2021","3":"carbon","4":"8.47","5":"4779","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-cf-slx-8-etap/2720.html"},{"1":"Grail CF SLX 8 Di2","2":"2021","3":"carbon","4":"8.44","5":"4479","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-cf-slx-8-di2/2721.html"},{"1":"Grail CF SL 8 eTap","2":"2021","3":"carbon","4":"8.66","5":"3899","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-cf-sl-8-etap/2719.html"},{"1":"Grail CF SL 8 Di2","2":"2021","3":"carbon","4":"8.88","5":"3409","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-cf-sl-8-di2/2718.html"},{"1":"Grail CF SL 8 WMN Di2","2":"2021","3":"carbon","4":"8.82","5":"3409","6":"Gravel","7":"All-Road","8":"Grail","9":"female","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-cf-sl-8-wmn-di2/2706.html"},{"1":"Grail CF SL 8","2":"2021","3":"carbon","4":"8.91","5":"2729","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-cf-sl-8/2717.html"},{"1":"Grail 7 1by","2":"2021","3":"aluminium","4":"9.54","5":"1749","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-7-1by/2707.html"},{"1":"Grail:ON CF 8 eTap","2":"2021","3":"carbon","4":"15.90","5":"5849","6":"E-Bikes","7":"E-Gravel","8":"Grail:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-gravel-bikes/grail-on/grail-on-cf-8-etap/2553.html"},{"1":"Grail:ON CF 8","2":"2021","3":"carbon","4":"16.70","5":"5169","6":"E-Bikes","7":"E-Gravel","8":"Grail:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-gravel-bikes/grail-on/grail-on-cf-8/2552.html"},{"1":"Grail:ON CF 7","2":"2021","3":"carbon","4":"17.10","5":"4869","6":"E-Bikes","7":"E-Gravel","8":"Grail:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-gravel-bikes/grail-on/grail-on-cf-7/2551.html"},{"1":"Grail:ON CF 7 WMN","2":"2021","3":"carbon","4":"17.10","5":"4869","6":"E-Bikes","7":"E-Gravel","8":"Grail:ON","9":"female","10":"https://www.canyon.com/en-de/e-bikes/e-gravel-bikes/grail-on/grail-on-cf-7-wmn/2722.html"},{"1":"Grail 7","2":"2021","3":"aluminium","4":"9.39","5":"1749","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-7/2370.html"},{"1":"Grail 7 WMN","2":"2021","3":"aluminium","4":"9.37","5":"1749","6":"Gravel","7":"All-Road","8":"Grail","9":"female","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-7-wmn/2373.html"},{"1":"Grail 6","2":"2021","3":"aluminium","4":"9.50","5":"1459","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-6/2369.html"},{"1":"Grail 6 WMN","2":"2021","3":"aluminium","4":"9.42","5":"1459","6":"Gravel","7":"All-Road","8":"Grail","9":"female","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-6-wmn/2372.html"},{"1":"Grail CF SL 7","2":"2021","3":"carbon","4":"8.88","5":"2339","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-cf-sl-7/2374.html"},{"1":"Grail CF SL 7 WMN","2":"2021","3":"carbon","4":"8.86","5":"2339","6":"Gravel","7":"All-Road","8":"Grail","9":"female","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-cf-sl-7-wmn/2378.html"},{"1":"Grail CF SL 8.0 ETAP","2":"2020","3":"carbon","4":"8.60","5":"3119","6":"Gravel","7":"All-Road","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/gravel-bikes/all-road/grail/grail-cf-sl-8.0-etap/2377.html"},{"1":"Grail CF SLX 8.0 Di2","2":"2020","3":"carbon","4":"8.30","5":"4089","6":"Gravel","7":"Adventure","8":"Grail","9":"unisex","10":"https://www.canyon.com/en-de/global-campaigns/end-of-season-sale/grail-cf-slx-8.0-di2/2382.html"},{"1":"Grand Canyon Young Hero","2":"2021","3":"aluminium","4":"13.57","5":"579","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-young-hero/2653.html"},{"1":"Grand Canyon 5","2":"2021","3":"aluminium","4":"14.13","5":"779","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-5/2613.html"},{"1":"Grand Canyon 5 WMN","2":"2021","3":"aluminium","4":"13.66","5":"779","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-5-wmn/2614.html"},{"1":"Grand Canyon 6","2":"2021","3":"aluminium","4":"13.95","5":"969","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-6/2615.html"},{"1":"Grand Canyon 6 WMN","2":"2021","3":"aluminium","4":"13.56","5":"969","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-6-wmn/2616.html"},{"1":"Grand Canyon 7","2":"2021","3":"aluminium","4":"13.99","5":"1169","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-7/2617.html"},{"1":"Grand Canyon 7 WMN","2":"2021","3":"aluminium","4":"13.66","5":"1169","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-7-wmn/2618.html"},{"1":"Grand Canyon 8","2":"2021","3":"aluminium","4":"13.58","5":"1359","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-8/2619.html"},{"1":"Grand Canyon 8 WMN","2":"2021","3":"aluminium","4":"13.29","5":"1359","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-8-wmn/2620.html"},{"1":"Grand Canyon 9","2":"2021","3":"aluminium","4":"13.38","5":"1749","6":"Mountain","7":"Trail","8":"Grand Canyon","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/grand-canyon/grand-canyon-9/2621.html"},{"1":"Grand Canyon:ON AL 9.0","2":"2020","3":"aluminium","4":"21.89","5":"3309","6":"E-Bikes","7":"E-Mountain","8":"Grand Canyon:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/grandcanyon-on/grand-canyon-on-al-9.0/2254.html"},{"1":"Grand Canyon:ON WMN AL 8.0","2":"2020","3":"aluminium","4":"21.25","5":"2919","6":"E-Bikes","7":"E-Mountain","8":"Grand Canyon:ON","9":"female","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/grandcanyon-on/grand-canyon-on-wmn-al-8.0/2252.html"},{"1":"Grand Canyon:ON AL 8.0","2":"2020","3":"aluminium","4":"21.45","5":"2529","6":"E-Bikes","7":"E-Mountain","8":"Grand Canyon:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/grandcanyon-on/grand-canyon-on-al-8.0/2253.html"},{"1":"Lux CF SLX 9.0","2":"2020","3":"carbon","4":"10.80","5":"4279","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-slx-9.0/2437.html"},{"1":"Lux CF 7","2":"2021","3":"carbon","4":"11.94","5":"3409","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-7/2646.html"},{"1":"Lux CF 6","2":"2021","3":"carbon","4":"12.11","5":"2919","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-6/2645.html"},{"1":"Lux CF 8","2":"2021","3":"carbon","4":"11.64","5":"3899","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-8/2648.html"},{"1":"Lux CF SLX 9","2":"2021","3":"carbon","4":"10.71","5":"4869","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-slx-9/2649.html"},{"1":"Lux CF SLX 9 Team","2":"2021","3":"carbon","4":"10.22","5":"5849","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-slx-9-team/2650.html"},{"1":"Lux CF SLX 9 LTD","2":"2021","3":"carbon","4":"10.13","5":"6819","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-slx-9-ltd/2651.html"},{"1":"Lux CF 7 WMN","2":"2021","3":"carbon","4":"11.78","5":"3409","6":"Mountain","7":"Cross-Country","8":"Lux","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-7-wmn/2647.html"},{"1":"Lux CF SLX 9.0 Race Limited","2":"2020","3":"carbon","4":"10.20","5":"6039","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-slx-9.0-race-limited/2439.html"},{"1":"Lux CF SLX 9.0 Team","2":"2020","3":"carbon","4":"10.10","5":"5559","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-slx-9.0-team/2438.html"},{"1":"Lux CF SL 8.0","2":"2020","3":"carbon","4":"11.40","5":"3599","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-sl-8.0/2436.html"},{"1":"Lux CF SL 6.0","2":"2020","3":"carbon","4":"11.70","5":"2439","6":"Mountain","7":"Cross-Country","8":"Lux","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/cross-country-bikes/lux/lux-cf-sl-6.0/2433.html"},{"1":"Neuron CF SLX 9","2":"2021","3":"carbon","4":"12.38","5":"5459","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-cf-slx-9/2634.html"},{"1":"Neuron CF LTD","2":"2021","3":"carbon","4":"13.26","5":"4869","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-cf-ltd/2633.html"},{"1":"Neuron CF 9 SL","2":"2021","3":"carbon","4":"13.08","5":"3899","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-cf-9-sl/2632.html"},{"1":"Neuron CF 9 WMN","2":"2021","3":"carbon","4":"13.34","5":"3219","6":"Mountain","7":"Trail","8":"Neuron","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-cf-9-wmn/2631.html"},{"1":"Neuron CF 9","2":"2021","3":"carbon","4":"13.75","5":"3219","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-cf-9/2630.html"},{"1":"Neuron CF 8","2":"2021","3":"carbon","4":"14.06","5":"2729","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-cf-8/2629.html"},{"1":"Neuron 7 WMN","2":"2021","3":"aluminium","4":"14.37","5":"2239","6":"Mountain","7":"Trail","8":"Neuron","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-7-wmn/2628.html"},{"1":"Neuron 7","2":"2021","3":"aluminium","4":"14.77","5":"2239","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-7/2627.html"},{"1":"Neuron 6 WMN","2":"2021","3":"aluminium","4":"14.94","5":"1849","6":"Mountain","7":"Trail","8":"Neuron","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-6-wmn/2626.html"},{"1":"Neuron 6","2":"2021","3":"aluminium","4":"15.26","5":"1849","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-6/2625.html"},{"1":"Neuron Young Hero","2":"2021","3":"aluminium","4":"13.96","5":"1459","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-young-hero/2624.html"},{"1":"Neuron WMN AL 7.0","2":"2020","3":"aluminium","4":"13.60","5":"2139","6":"Mountain","7":"Trail","8":"Neuron","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-wmn-al-7.0/2470.html"},{"1":"Neuron AL 7.0","2":"2020","3":"aluminium","4":"14.20","5":"2139","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-al-7.0/2468.html"},{"1":"Neuron AL 6.0","2":"2020","3":"aluminium","4":"14.60","5":"1749","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-al-6.0/2467.html"},{"1":"Neuron CF 9.0 SL","2":"2020","3":"carbon","4":"12.80","5":"3609","6":"Mountain","7":"Trail","8":"Neuron","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/neuron/neuron-cf-9.0-sl/2473.html"},{"1":"Neuron:ON 9.0","2":"2020","3":"aluminium","4":"22.90","5":"4389","6":"E-Bikes","7":"E-Mountain","8":"Neuron:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/neuron-on/neuron-on-9.0/2258.html"},{"1":"Neuron:ON 8.0","2":"2020","3":"aluminium","4":"23.40","5":"3899","6":"E-Bikes","7":"E-Mountain","8":"Neuron:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/neuron-on/neuron-on-8.0/2257.html"},{"1":"Neuron:ON WMN 7.0","2":"2020","3":"aluminium","4":"23.00","5":"3609","6":"E-Bikes","7":"E-Mountain","8":"Neuron:ON","9":"female","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/neuron-on/neuron-on-wmn-7.0/2255.html"},{"1":"Neuron:ON 7.0","2":"2020","3":"aluminium","4":"23.68","5":"3609","6":"E-Bikes","7":"E-Mountain","8":"Neuron:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/neuron-on/neuron-on-7.0/2256.html"},{"1":"Sender CFR","2":"2021","3":"aluminium","4":"15.80","5":"5649","6":"Mountain","7":"Downhill","8":"Sender","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/downhill-bikes/sender/sender-cfr/2251.html"},{"1":"Sender CFR FMD","2":"2021","3":"carbon","4":"17.20","5":"4579","6":"Mountain","7":"Downhill","8":"Sender","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/downhill-bikes/sender/sender-cfr-fmd/2250.html"},{"1":"Sender 6","2":"2020","3":"aluminium","4":"16.69","5":"2339","6":"Mountain","7":"Downhill","8":"Sender","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/downhill-bikes/sender/sender-6/2249.html"},{"1":"Spectral 6","2":"2021","3":"aluminium","4":"14.82","5":"2529","6":"Mountain","7":"Trail","8":"Spectral","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-6/2675.html"},{"1":"Spectral 5","2":"2021","3":"aluminium","4":"14.61","5":"2139","6":"Mountain","7":"Trail","8":"Spectral","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-5/2674.html"},{"1":"Spectral 6 WMN","2":"2021","3":"aluminium","4":"14.50","5":"2139","6":"Mountain","7":"Trail","8":"Spectral","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-6-wmn/2680.html"},{"1":"Spectral CF 8","2":"2021","3":"carbon","4":"14.16","5":"3509","6":"Mountain","7":"Trail","8":"Spectral","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-cf-8/2677.html"},{"1":"Spectral CF 7 WMN","2":"2021","3":"carbon","4":"13.80","5":"3119","6":"Mountain","7":"Trail","8":"Spectral","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-cf-7-wmn/2681.html"},{"1":"Spectral CF 9","2":"2021","3":"carbon","4":"13.33","5":"4189","6":"Mountain","7":"Trail","8":"Spectral","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-cf-9/2678.html"},{"1":"Spectral CF 7","2":"2021","3":"carbon","4":"13.84","5":"2919","6":"Mountain","7":"Trail","8":"Spectral","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-cf-7/2676.html"},{"1":"Spectral WMN CFR 9.0","2":"2020","3":"carbon","4":"12.90","5":"3899","6":"Mountain","7":"Trail","8":"Spectral","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-wmn-cfr-9.0/2238.html"},{"1":"Spectral CFR 9.0","2":"2020","3":"carbon","4":"12.70","5":"4579","6":"Mountain","7":"Trail","8":"Spectral","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-cfr-9.0/2234.html"},{"1":"Spectral CF 9.0","2":"2020","3":"carbon","4":"13.30","5":"3509","6":"Mountain","7":"Trail","8":"Spectral","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-cf-9.0/2233.html"},{"1":"Spectral WMN CF 8.0","2":"2020","3":"carbon","4":"13.40","5":"2729","6":"Mountain","7":"Trail","8":"Spectral","9":"female","10":"https://www.canyon.com/en-de/mountain-bikes/trail-bikes/spectral/spectral-wmn-cf-8.0/2237.html"},{"1":"Spectral:ON CF 9.0","2":"2020","3":"carbon","4":"21.35","5":"5839","6":"E-Bikes","7":"E-Mountain","8":"Spectral:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/spectral-on/spectral-on-cf-9.0/2262.html"},{"1":"Spectral:ON CF 8.0","2":"2020","3":"carbon","4":"21.85","5":"4869","6":"E-Bikes","7":"E-Mountain","8":"Spectral:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/spectral-on/spectral-on-cf-8.0/2261.html"},{"1":"Spectral:ON CF 7.0","2":"2020","3":"carbon","4":"22.15","5":"3889","6":"E-Bikes","7":"E-Mountain","8":"Spectral:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/spectral-on/spectral-on-cf-7.0/2260.html"},{"1":"Spectral:ON WMN CF 7.0","2":"2020","3":"carbon","4":"22.02","5":"3889","6":"E-Bikes","7":"E-Mountain","8":"Spectral:ON","9":"female","10":"https://www.canyon.com/en-de/e-bikes/e-mountain-bikes/spectral-on/spectral-on-wmn-cf-7.0/2259.html"},{"1":"Stitched 720","2":"2020","3":"aluminium","4":"12.55","5":"1749","6":"Mountain","7":"Dirt Jump","8":"Stitched","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/dirt-jump-bikes/stitched/stitched-720/2368.html"},{"1":"Stitched 360 Pro","2":"2020","3":"aluminium","4":"11.50","5":"1219","6":"Mountain","7":"Dirt Jump","8":"Stitched","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/dirt-jump-bikes/stitched/stitched-360-pro/2367.html"},{"1":"Stitched 360","2":"2020","3":"aluminium","4":"12.20","5":"829","6":"Mountain","7":"Dirt Jump","8":"Stitched","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/dirt-jump-bikes/stitched/stitched-360/2366.html"},{"1":"Strive CF 9.0","2":"2020","3":"carbon","4":"14.18","5":"4679","6":"Mountain","7":"Enduro","8":"Strive","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/strive/strive-cf-9.0/2241.html"},{"1":"Strive CFR","2":"2020","3":"aluminium","4":"13.36","5":"5849","6":"Mountain","7":"Enduro","8":"Strive","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/strive/strive-cfr/2242.html"},{"1":"Strive CF 7.0","2":"2020","3":"carbon","4":"15.04","5":"2919","6":"Mountain","7":"Enduro","8":"Strive","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/strive/strive-cf-7.0/2239.html"},{"1":"Strive CF 8.0","2":"2020","3":"carbon","4":"14.60","5":"3699","6":"Mountain","7":"Enduro","8":"Strive","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/strive/strive-cf-8.0/2240.html"},{"1":"Torque CF 8.0","2":"2020","3":"carbon","4":"14.40","5":"3899","6":"Mountain","7":"Enduro","8":"Torque","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/torque/torque-cf-8.0/2247.html"},{"1":"Torque CF 9.0","2":"2020","3":"carbon","4":"14.35","5":"4679","6":"Mountain","7":"Enduro","8":"Torque","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/torque/torque-cf-9.0/2248.html"},{"1":"Torque AL 6.0","2":"2020","3":"aluminium","4":"15.60","5":"2729","6":"Mountain","7":"Enduro","8":"Torque","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/torque/torque-al-6.0/2245.html"},{"1":"Torque CF 7.0","2":"2020","3":"carbon","4":"14.60","5":"3219","6":"Mountain","7":"Enduro","8":"Torque","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/torque/torque-cf-7.0/2246.html"},{"1":"Torque CF 9.0","2":"2019","3":"carbon","4":"14.40","5":"4679","6":"Mountain","7":"Enduro","8":"Torque","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/torque/torque-cf-9.0/2017.html"},{"1":"Torque AL 5.0","2":"2020","3":"aluminium","4":"15.75","5":"2239","6":"Mountain","7":"Enduro","8":"Torque","9":"unisex","10":"https://www.canyon.com/en-de/mountain-bikes/enduro-bikes/torque/torque-al-5.0/2244.html"},{"1":"Commuter:ON 7","2":"2021","3":"aluminium","4":"17.60","5":"3219","6":"E-Bikes","7":"E-City","8":"Commuter:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-city-bikes/commuter-on/commuter-on-7/2356.html"},{"1":"Commuter:ON 7 WMN","2":"2021","3":"aluminium","4":"17.80","5":"3219","6":"E-Bikes","7":"E-City","8":"Commuter:ON","9":"female","10":"https://www.canyon.com/en-de/e-bikes/e-city-bikes/commuter-on/commuter-on-7-wmn/2926.html"},{"1":"Pathlite:ON 7","2":"2021","3":"aluminium","4":"24.20","5":"3309","6":"E-Bikes","7":"E-Trekking","8":"Pathlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-trekking-bikes/pathlite-on/pathlite-on-7/2800.html"},{"1":"Pathlite:ON 6","2":"2021","3":"aluminium","4":"21.30","5":"2829","6":"E-Bikes","7":"E-Trekking","8":"Pathlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-trekking-bikes/pathlite-on/pathlite-on-6/2799.html"},{"1":"Pathlite:ON 9.0","2":"2020","3":"aluminium","4":"27.50","5":"4869","6":"E-Bikes","7":"E-Trekking","8":"Pathlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-trekking-bikes/pathlite-on/pathlite-on-9.0/2343.html"},{"1":"Pathlite:ON 8.0","2":"2020","3":"aluminium","4":"27.04","5":"3789","6":"E-Bikes","7":"E-Trekking","8":"Pathlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-trekking-bikes/pathlite-on/pathlite-on-8.0/2342.html"},{"1":"Pathlite:ON 7.0","2":"2020","3":"aluminium","4":"24.06","5":"3119","6":"E-Bikes","7":"E-Trekking","8":"Pathlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-trekking-bikes/pathlite-on/pathlite-on-7.0/2341.html"},{"1":"Pathlite:ON 6.0","2":"2020","3":"aluminium","4":"21.15","5":"2829","6":"E-Bikes","7":"E-Trekking","8":"Pathlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-trekking-bikes/pathlite-on/pathlite-on-6.0/2340.html"},{"1":"Pathlite:ON 5.0","2":"2020","3":"aluminium","4":"21.05","5":"2529","6":"E-Bikes","7":"E-Trekking","8":"Pathlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-trekking-bikes/pathlite-on/pathlite-on-5.0/2339.html"},{"1":"Precede:ON CF 9","2":"2021","3":"carbon","4":"22.15","5":"4869","6":"E-Bikes","7":"E-City","8":"Precede:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-city-bikes/precede-on/precede-on-cf-9/2804.html"},{"1":"Precede:ON CF 9 ST","2":"2021","3":"carbon","4":"23.20","5":"4869","6":"E-Bikes","7":"E-City","8":"Precede:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-city-bikes/precede-on/precede-on-cf-9-st/2928.html"},{"1":"Precede:ON CF 8 ST","2":"2021","3":"carbon","4":"21.85","5":"4189","6":"E-Bikes","7":"E-City","8":"Precede:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-city-bikes/precede-on/precede-on-cf-8-st/2927.html"},{"1":"Precede:ON CF 8","2":"2021","3":"carbon","4":"21.06","5":"4189","6":"E-Bikes","7":"E-City","8":"Precede:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-city-bikes/precede-on/precede-on-cf-8/2803.html"},{"1":"Roadlite:ON AL 7.0","2":"2020","3":"aluminium","4":"15.50","5":"2299","6":"E-Bikes","7":"E-Fitness","8":"Roadlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-fitness-bikes/roadlite-on/roadlite-on-al-7.0/2293.html"},{"1":"Roadlite:ON AL 8.0","2":"2020","3":"aluminium","4":"15.40","5":"3219","6":"E-Bikes","7":"E-Fitness","8":"Roadlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-fitness-bikes/roadlite-on/roadlite-on-al-8.0/2294.html"},{"1":"Roadlite:ON AL 9.0","2":"2020","3":"aluminium","4":"14.90","5":"3609","6":"E-Bikes","7":"E-Fitness","8":"Roadlite:ON","9":"unisex","10":"https://www.canyon.com/en-de/e-bikes/e-fitness-bikes/roadlite-on/roadlite-on-al-9.0/2324.html"},{"1":"Commuter 5.0","2":"2020","3":"aluminium","4":"12.10","5":"1359","6":"Hybrid / City","7":"City","8":"Commuter","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/commuter/commuter-5.0/1955.html"},{"1":"Commuter 8.0","2":"2020","3":"aluminium","4":"12.20","5":"2339","6":"Hybrid / City","7":"City","8":"Commuter","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/commuter/commuter-8.0/1958.html"},{"1":"Commuter 6.0","2":"2020","3":"aluminium","4":"11.90","5":"1499","6":"Hybrid / City","7":"City","8":"Commuter","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/commuter/commuter-6.0/1956.html"},{"1":"Commuter Sport 8.0","2":"2020","3":"aluminium","4":"10.60","5":"1599","6":"Hybrid / City","7":"City","8":"Commuter","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/commuter/commuter-sport-8.0/1960.html"},{"1":"Commuter 4.0","2":"2020","3":"aluminium","4":"12.10","5":"1069","6":"Hybrid / City","7":"City","8":"Commuter","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/commuter/commuter-4.0/1954.html"},{"1":"Commuter Sport 5.0","2":"2020","3":"aluminium","4":"10.80","5":"899","6":"Hybrid / City","7":"City","8":"Commuter","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/commuter/commuter-sport-5.0/1959.html"},{"1":"Commuter 3.0","2":"2020","3":"aluminium","4":"11.00","5":"799","6":"Hybrid / City","7":"City","8":"Commuter","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/commuter/commuter-3.0/1953.html"},{"1":"Pathlite 7 WMN","2":"2021","3":"aluminium","4":"11.97","5":"1459","6":"Hybrid / City","7":"Touring","8":"Pathlite","9":"female","10":"https://www.canyon.com/en-de/hybrid-city/touring-bikes/pathlite/pathlite-7-wmn/2795.html"},{"1":"Pathlite 6 WMN","2":"2021","3":"aluminium","4":"12.70","5":"1069","6":"Hybrid / City","7":"Touring","8":"Pathlite","9":"female","10":"https://www.canyon.com/en-de/hybrid-city/touring-bikes/pathlite/pathlite-6-wmn/2793.html"},{"1":"Pathlite 5 WMN","2":"2021","3":"aluminium","4":"12.84","5":"879","6":"Hybrid / City","7":"Touring","8":"Pathlite","9":"female","10":"https://www.canyon.com/en-de/hybrid-city/touring-bikes/pathlite/pathlite-5-wmn/2791.html"},{"1":"Pathlite 5","2":"2021","3":"aluminium","4":"12.92","5":"879","6":"Hybrid / City","7":"Touring","8":"Pathlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/touring-bikes/pathlite/pathlite-5/2790.html"},{"1":"Pathlite AL SL 8.0","2":"2020","3":"aluminium","4":"11.70","5":"1659","6":"Hybrid / City","7":"Touring","8":"Pathlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/touring-bikes/pathlite/pathlite-al-sl-8.0/2335.html"},{"1":"Pathlite AL SL 7.0","2":"2020","3":"aluminium","4":"11.40","5":"1459","6":"Hybrid / City","7":"Touring","8":"Pathlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/touring-bikes/pathlite/pathlite-al-sl-7.0/2334.html"},{"1":"Pathlite AL 6.0","2":"2020","3":"aluminium","4":"12.69","5":"1069","6":"Hybrid / City","7":"Touring","8":"Pathlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/touring-bikes/pathlite/pathlite-al-6.0/2333.html"},{"1":"Pathlite WMN AL 6.0","2":"2020","3":"aluminium","4":"12.79","5":"899","6":"Hybrid / City","7":"Touring","8":"Pathlite","9":"female","10":"https://www.canyon.com/en-de/hybrid-city/touring-bikes/pathlite/pathlite-wmn-al-6.0/2336.html"},{"1":"Roadlite 6 WMN","2":"2021","3":"aluminium","4":"9.75","5":"1069","6":"Hybrid / City","7":"City","8":"Roadlite","9":"female","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-6-wmn/2783.html"},{"1":"Roadlite 6","2":"2021","3":"aluminium","4":"9.90","5":"1069","6":"Hybrid / City","7":"City","8":"Roadlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-6/2782.html"},{"1":"Roadlite 5 WMN","2":"2021","3":"aluminium","4":"9.80","5":"779","6":"Hybrid / City","7":"City","8":"Roadlite","9":"female","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-5-wmn/2781.html"},{"1":"Roadlite 5","2":"2021","3":"aluminium","4":"9.90","5":"779","6":"Hybrid / City","7":"City","8":"Roadlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-5/2780.html"},{"1":"Roadlite AL SL 8.0","2":"2020","3":"aluminium","4":"9.25","5":"1359","6":"Hybrid / City","7":"City","8":"Roadlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-al-sl-8.0/2345.html"},{"1":"Roadlite WMN AL SL 8.0","2":"2020","3":"aluminium","4":"9.15","5":"1159","6":"Hybrid / City","7":"City","8":"Roadlite","9":"female","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-wmn-al-sl-8.0/2347.html"},{"1":"Roadlite AL 7.0","2":"2020","3":"aluminium","4":"9.98","5":"999","6":"Hybrid / City","7":"City","8":"Roadlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-al-7.0/2344.html"},{"1":"Roadlite CF 9.0","2":"2020","3":"carbon","4":"8.00","5":"2149","6":"Hybrid / City","7":"City","8":"Roadlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-cf-9.0/1977.html"},{"1":"Roadlite WMN CF 8.0","2":"2020","3":"carbon","4":"8.30","5":"1949","6":"Hybrid / City","7":"City","8":"Roadlite","9":"female","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-wmn-cf-8.0/1976.html"},{"1":"Roadlite CF 9.0 LTD","2":"2020","3":"carbon","4":"7.90","5":"2919","6":"Hybrid / City","7":"City","8":"Roadlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-cf-9.0-ltd/1979.html"},{"1":"Roadlite CF 8.0","2":"2020","3":"carbon","4":"8.30","5":"1749","6":"Hybrid / City","7":"City","8":"Roadlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-cf-8.0/1975.html"},{"1":"Roadlite WMN CF 7.0","2":"2020","3":"carbon","4":"8.80","5":"1559","6":"Hybrid / City","7":"City","8":"Roadlite","9":"female","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-wmn-cf-7.0/1974.html"},{"1":"Roadlite CF 7.0","2":"2020","3":"carbon","4":"8.80","5":"1359","6":"Hybrid / City","7":"City","8":"Roadlite","9":"unisex","10":"https://www.canyon.com/en-de/hybrid-city/citybikes/roadlite/roadlite-cf-7.0/1973.html"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
 </div>
 </div>
+<div id="build-features-using-recipes" class="section level1">
+<h1><span class="header-section-number">4</span> Build features using recipes</h1>
+<pre class="r"><code>data &lt;- bike_features_tbl %&gt;% select (&quot;Rear Derailleur&quot;,&quot;model&quot;,&quot;model_year&quot;,&quot;frame_material&quot;,&quot;weight&quot;,&quot;price&quot;,&quot;category_1&quot;,&quot;category_2&quot;,&quot;category_3&quot;,&quot;gender&quot;) %&gt;% 
+  rename(&quot;Rear_Derailleur&quot;=&quot;Rear Derailleur&quot;) %&gt;%
+  mutate(id = row_number())
+  
+set.seed(42)
+data_split &lt;- initial_split(data, prop = 3/4)
+train_data &lt;- training(data_split)
+test_data  &lt;- testing(data_split)
+
+#train_recipe &lt;- recipe(c(&quot;price&quot;,&quot;model&quot;,&quot;model_year&quot;,&quot;frame_material&quot;,&quot;weight&quot;,&quot;price&quot;,&quot;category_1&quot;,&quot;category_2&quot;,&quot;category_3&quot;,&quot;gender&quot;) ~ ., data = train_data)  %&gt;%
+train_recipe &lt;- recipe(price ~ ., data = train_data)  %&gt;%
+step_dummy(all_nominal(), -all_outcomes())</code></pre>
+<pre class="r"><code>rec_data &lt;- bake(prep(train_recipe),new_data = NULL) 
+
+
+glimpse(rec_data)</code></pre>
+<pre><code>## Rows: 173
+## Columns: 271
+## $ model_year                                            &lt;dbl&gt; 2020, 2020, 2020…
+## $ weight                                                &lt;dbl&gt; 8.20, 8.30, 7.07…
+## $ id                                                    &lt;int&gt; 49, 229, 65, 153…
+## $ price                                                 &lt;dbl&gt; 8769, 1749, 5849…
+## $ Rear_Derailleur_Campagnolo.Potenza.11.GS              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Campagnolo.Super.Record.EPS..12.speed &lt;dbl&gt; 0, 0, 0, 0, 1, 0…
+## $ Rear_Derailleur_Shimano.105.R7000.GS                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.105.R7000.SS                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Deore.M5100.11s               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Deore.M6000.GS                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Deore.RD.M6100.12s            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Deore.XT                      &lt;dbl&gt; 0, 0, 0, 1, 0, 1…
+## $ Rear_Derailleur_Shimano.Deore.XT.M8000.SGS            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Deore.XTR                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Deore..10s                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Dura.Ace.Di2.R9150..11.speed  &lt;dbl&gt; 1, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Dura.Ace.R9100.SS             &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.GRX.Di2.RX815.GS              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.GRX.RX400.GS                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.GRX.RX810.GS                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.GRX.RX812.GS                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Saint.M820.SS                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.SLX.M7000.GS                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.SLX.M7100.SGS                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Tiagra.4700.GS                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Ultegra.Di2.R8050.GS          &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Ultegra.Di2.R8050.SS          &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Ultegra.Di2.RX805.GS          &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Ultegra.R8000.SGS             &lt;dbl&gt; 0, 1, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Ultegra.R8000.SS              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.Ultegra.RX800.GS              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_Shimano.XT.M8120.SGS                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.Apex.1.SGS                       &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.Force.1.GS                       &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.Force.CX1.SGS                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.Force.eTap.AXS.12s               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.Force.eTap.AXS..12.speed         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.GX.DH                            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.GX.Eagle                         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.NX.Eagle..12s                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.RED.eTap.AXS..12.speed           &lt;dbl&gt; 0, 0, 1, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.Rival.1.GS                       &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.SX.Eagle                         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.X01.DH                           &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.X01.Eagle                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.X01.Eagle.AXS                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.XO1.Eagle                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.XX1.Eagle                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.XX1.Eagle.12s                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ Rear_Derailleur_SRAM.XX1.Eagle.AXS                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Aeroad.CF.SL.Disc.8.0                           &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Aeroad.CF.SL.Disc.8.0.Di2                       &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Aeroad.CF.SL.Disc.8.0.ETAP                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Aeroad.CF.SLX.9.0.SL                            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Aeroad.CF.SLX.Disc.9.0.Di2                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Aeroad.CF.SLX.Disc.9.0.ETAP                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Aeroad.WMN.CF.SL.8.0                            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Commuter.3.0                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Commuter.4.0                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Commuter.6.0                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Commuter.8.0                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Commuter.ON.7                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Commuter.ON.7.WMN                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Dude.CF.8.0.Trail                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Dude.CF.9.0.Trail                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.AL.7.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.AL.Disc.6.0                            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.AL.Disc.7.0                            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.CF.7.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.CF.8.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.CF.SL.Disc.7.0                         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.CF.SL.Disc.8.0                         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.CF.SL.Disc.8.0.Pro                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.CF.SLX.Disc.9.0.ETAP                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.WMN.AL.Disc.6.0                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.WMN.AL.Disc.7.0                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.WMN.CF.SL.Disc.7.0                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.WMN.CF.SL.Disc.8.0                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.WMN.CF.SL.Disc.8.0.Di2                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Endurace.ON.7.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CF.5                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CF.5.WMN                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CF.7                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CF.7.WMN                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CF.SLX.8                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CF.SLX.9                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CF.SLX.9.0.Race                          &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CF.SLX.9.0.Race.LTD                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CFR.LTD                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Exceed.CFR.Team                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.6.WMN                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.7                                         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.7.1by                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.7.WMN                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.CF.SL.7                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.CF.SL.7.WMN                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.CF.SL.8                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.CF.SL.8.Di2                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.CF.SL.8.eTap                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.CF.SL.8.0.ETAP                            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.CF.SLX.8.Di2                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.CF.SLX.8.eTap                             &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.CF.SLX.8.0.Di2                            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.ON.CF.7                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.ON.CF.7.WMN                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.ON.CF.8                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grail.ON.CF.8.eTap                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.5                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.5.WMN                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.6                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.6.WMN                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.7                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.7.WMN                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.8                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.8.WMN                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.9                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.Young.Hero                         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Grand.Canyon.ON.AL.8.0                          &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Inflite.CF.SL.6                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Inflite.CF.SL.7                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Inflite.CF.SL.8                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Inflite.CF.SLX.9                                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Inflite.CF.SLX.9.Team                           &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.6                                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.7                                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.7.WMN                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.SL.6.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.SL.8.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.SLX.9                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.SLX.9.Team                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.SLX.9.0                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.SLX.9.0.Race.Limited                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Lux.CF.SLX.9.0.Team                             &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.6                                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.6.WMN                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 1…
+## $ model_Neuron.7                                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.AL.7.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.CF.8                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.CF.9                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.CF.9.SL                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.CF.9.0.SL                                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.CF.LTD                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.CF.SLX.9                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.WMN.AL.7.0                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.ON.7.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.ON.8.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Neuron.ON.9.0                                   &lt;dbl&gt; 0, 0, 0, 1, 0, 0…
+## $ model_Pathlite.5                                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Pathlite.5.WMN                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Pathlite.6.WMN                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Pathlite.AL.6.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Pathlite.AL.SL.7.0                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Pathlite.WMN.AL.6.0                             &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Pathlite.ON.5.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Pathlite.ON.6.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Pathlite.ON.7.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Pathlite.ON.8.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Precede.ON.CF.8                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Precede.ON.CF.8.ST                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Precede.ON.CF.9                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Precede.ON.CF.9.ST                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.5                                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.5.WMN                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.6                                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.6.WMN                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.AL.7.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.CF.7.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.CF.8.0                                 &lt;dbl&gt; 0, 1, 0, 0, 0, 0…
+## $ model_Roadlite.CF.9.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.CF.9.0.LTD                             &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.WMN.CF.7.0                             &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.ON.AL.7.0                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.ON.AL.8.0                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Roadlite.ON.AL.9.0                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Sender.6                                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Sender.CFR                                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Sender.CFR.FMD                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.5                                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.6                                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.6.WMN                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.CF.7                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.CF.7.WMN                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.CF.9                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.CF.9.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.CFR.9.0                                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.WMN.CF.8.0                             &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.ON.CF.8.0                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Spectral.ON.CF.9.0                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Speedmax.CF.7.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Speedmax.CF.8.0                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Speedmax.CF.8.0.LTD                             &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Speedmax.CF.SLX.8.0.SL                          &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Speedmax.CF.SLX.9.0.LTD                         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Speedmax.CF.SLX.9.0.SL                          &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Speedmax.CF.SLX.9.0.TT                          &lt;dbl&gt; 1, 0, 0, 0, 0, 0…
+## $ model_Speedmax.WMN.CF.7.0                             &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Stitched.360                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Stitched.720                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Strive.CF.7.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Strive.CF.9.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Torque.AL.5.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Torque.AL.6.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Torque.CF.7.0                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SL.7.0                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SL.8.0                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SL.8.0.Di2                          &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SL.Disc.8.0.Di2.Aero                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SLX.8.0.Di2                         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SLX.9.0.Di2                         &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SLX.Disc.8.0.ETAP                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SLX.Disc.9.0.Di2                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SLX.Disc.9.0.ETAP                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.CF.SLX.Disc.9.0.Team.Movistar          &lt;dbl&gt; 0, 0, 0, 0, 1, 0…
+## $ model_Ultimate.CFR.Disc.EPS                           &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.WMN.CF.SL.Disc.7.0                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.WMN.CF.SL.Disc.8.0                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.WMN.CF.SL.Disc.8.0.Di2                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.WMN.CF.SL.Disc.8.0.ETAP                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ model_Ultimate.WMN.CF.SLX.Disc.9.0.ETAP               &lt;dbl&gt; 0, 0, 1, 0, 0, 0…
+## $ frame_material_carbon                                 &lt;dbl&gt; 1, 1, 1, 0, 1, 0…
+## $ category_1_Gravel                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_1_Hybrid...City                              &lt;dbl&gt; 0, 1, 0, 0, 0, 0…
+## $ category_1_Mountain                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 1…
+## $ category_1_Road                                       &lt;dbl&gt; 1, 0, 1, 0, 1, 0…
+## $ category_2_All.Road                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_City                                       &lt;dbl&gt; 0, 1, 0, 0, 0, 0…
+## $ category_2_Cross.Country                              &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_Cyclocross                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_Dirt.Jump                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_Downhill                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_E.City                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_E.Fitness                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_E.Gravel                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_E.Mountain                                 &lt;dbl&gt; 0, 0, 0, 1, 0, 0…
+## $ category_2_E.Road                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_E.Trekking                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_Endurance                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_Enduro                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_Fat.Bikes                                  &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_Race                                       &lt;dbl&gt; 0, 0, 1, 0, 1, 0…
+## $ category_2_Touring                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_2_Trail                                      &lt;dbl&gt; 0, 0, 0, 0, 0, 1…
+## $ category_2_Triathlon.Bike                             &lt;dbl&gt; 1, 0, 0, 0, 0, 0…
+## $ category_3_Commuter                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Commuter.ON                                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Dude                                       &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Endurace                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Endurace.ON                                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Exceed                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Grail                                      &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Grail.ON                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Grand.Canyon                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Grand.Canyon.ON                            &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Inflite                                    &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Lux                                        &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Neuron                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 1…
+## $ category_3_Neuron.ON                                  &lt;dbl&gt; 0, 0, 0, 1, 0, 0…
+## $ category_3_Pathlite                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Pathlite.ON                                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Precede.ON                                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Roadlite                                   &lt;dbl&gt; 0, 1, 0, 0, 0, 0…
+## $ category_3_Roadlite.ON                                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Sender                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Spectral                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Spectral.ON                                &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Speedmax                                   &lt;dbl&gt; 1, 0, 0, 0, 0, 0…
+## $ category_3_Stitched                                   &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Strive                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Torque                                     &lt;dbl&gt; 0, 0, 0, 0, 0, 0…
+## $ category_3_Ultimate                                   &lt;dbl&gt; 0, 0, 1, 0, 1, 0…
+## $ gender_unisex                                         &lt;dbl&gt; 1, 1, 0, 1, 1, 0…</code></pre>
+<pre class="r"><code>summary(train_recipe)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["variable"],"name":[1],"type":["chr"],"align":["left"]},{"label":["type"],"name":[2],"type":["chr"],"align":["left"]},{"label":["role"],"name":[3],"type":["chr"],"align":["left"]},{"label":["source"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"Rear_Derailleur","2":"nominal","3":"predictor","4":"original"},{"1":"model","2":"nominal","3":"predictor","4":"original"},{"1":"model_year","2":"numeric","3":"predictor","4":"original"},{"1":"frame_material","2":"nominal","3":"predictor","4":"original"},{"1":"weight","2":"numeric","3":"predictor","4":"original"},{"1":"category_1","2":"nominal","3":"predictor","4":"original"},{"1":"category_2","2":"nominal","3":"predictor","4":"original"},{"1":"category_3","2":"nominal","3":"predictor","4":"original"},{"1":"gender","2":"nominal","3":"predictor","4":"original"},{"1":"id","2":"numeric","3":"predictor","4":"original"},{"1":"price","2":"numeric","3":"outcome","4":"original"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
 </div>
-<div id="my-second-post-note-the-order" class="section level1">
-<h1><span class="header-section-number">2</span> My second post (note the order)</h1>
-<p>Last compiled: 2021-05-30</p>
-<p>I’m writing this tutorial going from the top down. And, this is how it will be printed. So, notice the second post is second in the list. If you want your most recent post to be at the top, then make a new post starting at the top. If you want the oldest first, do, then keep adding to the bottom</p>
 </div>
-<div id="adding-r-stuff" class="section level1">
-<h1><span class="header-section-number">3</span> Adding R stuff</h1>
-<p>So far this is just a blog where you can write in plain text and serve your writing to a webpage. One of the main purposes of this lab journal is to record your progress learning R. The reason I am asking you to use this process is because you can both make a website, and a lab journal, and learn R all in R-studio. This makes everything really convenient and in the same place.</p>
-<p>So, let’s say you are learning how to make a histogram in R. For example, maybe you want to sample 100 numbers from a normal distribution with mean = 0, and standard deviation = 1, and then you want to plot a histogram. You can do this right here by using an r code block, like this:</p>
-<pre class="r"><code>samples &lt;- rnorm(100, mean=0, sd=1)
-hist(samples)</code></pre>
-<p><img src="02_ml_sup_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
-<p>When you knit this R Markdown document, you will see that the histogram is printed to the page, along with the R code. This document can be set up to hide the R code in the webpage, just delete the comment (hashtag) from the cold folding option in the yaml header up top. For purposes of letting yourself see the code, and me see the code, best to keep it the way that it is. You’ll learn that all of these things and more can be customized in each R code block.</p>
+<div id="build-xgboost" class="section level1">
+<h1><span class="header-section-number">5</span> Build XGBOOST</h1>
+<pre class="r"><code># 4.3 XGBOOST ----
+# 4.3.1 Model ----
+
+set.seed(42)
+model_boost_tree_xgboost &lt;- boost_tree(
+    mode = &quot;regression&quot;,
+    mtry = 30,
+    learn_rate = 0.1,
+    tree_depth = 10
+    ) %&gt;%
+    set_engine(&quot;xgboost&quot;) 
+#%&gt;% fit(price ~ ., data = train_tbl %&gt;% select(-c(id:weight), -category_1, -c(category_3:gender)))
+
+#model_07_boost_tree_xgboost %&gt;% calc_metrics(test_tbl)</code></pre>
+<pre class="r"><code>summary(train_recipe)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["variable"],"name":[1],"type":["chr"],"align":["left"]},{"label":["type"],"name":[2],"type":["chr"],"align":["left"]},{"label":["role"],"name":[3],"type":["chr"],"align":["left"]},{"label":["source"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"model_year","2":"numeric","3":"predictor","4":"original"},{"1":"weight","2":"numeric","3":"predictor","4":"original"},{"1":"id","2":"numeric","3":"predictor","4":"original"},{"1":"price","2":"numeric","3":"outcome","4":"original"},{"1":"Rear_Derailleur_Campagnolo.Potenza.11.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Campagnolo.Super.Record.EPS..12.speed","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.105.R7000.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.105.R7000.SS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Deore.M5100.11s","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Deore.M6000.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Deore.RD.M6100.12s","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Deore.XT","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Deore.XT.M8000.SGS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Deore.XTR","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Deore..10s","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Dura.Ace.Di2.R9150..11.speed","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Dura.Ace.R9100.SS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.GRX.Di2.RX815.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.GRX.RX400.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.GRX.RX810.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.GRX.RX812.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Saint.M820.SS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.SLX.M7000.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.SLX.M7100.SGS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Tiagra.4700.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Ultegra.Di2.R8050.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Ultegra.Di2.R8050.SS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Ultegra.Di2.RX805.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Ultegra.R8000.SGS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Ultegra.R8000.SS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.Ultegra.RX800.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_Shimano.XT.M8120.SGS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.Apex.1.SGS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.Force.1.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.Force.CX1.SGS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.Force.eTap.AXS.12s","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.Force.eTap.AXS..12.speed","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.GX.DH","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.GX.Eagle","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.NX.Eagle..12s","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.RED.eTap.AXS..12.speed","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.Rival.1.GS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.SX.Eagle","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.X01.DH","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.X01.Eagle","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.X01.Eagle.AXS","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.XO1.Eagle","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.XX1.Eagle","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.XX1.Eagle.12s","2":"numeric","3":"predictor","4":"derived"},{"1":"Rear_Derailleur_SRAM.XX1.Eagle.AXS","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Aeroad.CF.SL.Disc.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Aeroad.CF.SL.Disc.8.0.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Aeroad.CF.SL.Disc.8.0.ETAP","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Aeroad.CF.SLX.9.0.SL","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Aeroad.CF.SLX.Disc.9.0.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Aeroad.CF.SLX.Disc.9.0.ETAP","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Aeroad.WMN.CF.SL.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Commuter.3.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Commuter.4.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Commuter.6.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Commuter.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Commuter.ON.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Commuter.ON.7.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Dude.CF.8.0.Trail","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Dude.CF.9.0.Trail","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.AL.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.AL.Disc.6.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.AL.Disc.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.CF.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.CF.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.CF.SL.Disc.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.CF.SL.Disc.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.CF.SL.Disc.8.0.Pro","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.CF.SLX.Disc.9.0.ETAP","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.WMN.AL.Disc.6.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.WMN.AL.Disc.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.WMN.CF.SL.Disc.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.WMN.CF.SL.Disc.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.WMN.CF.SL.Disc.8.0.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Endurace.ON.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CF.5","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CF.5.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CF.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CF.7.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CF.SLX.8","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CF.SLX.9","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CF.SLX.9.0.Race","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CF.SLX.9.0.Race.LTD","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CFR.LTD","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Exceed.CFR.Team","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.6.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.7.1by","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.7.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.CF.SL.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.CF.SL.7.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.CF.SL.8","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.CF.SL.8.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.CF.SL.8.eTap","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.CF.SL.8.0.ETAP","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.CF.SLX.8.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.CF.SLX.8.eTap","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.CF.SLX.8.0.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.ON.CF.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.ON.CF.7.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.ON.CF.8","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grail.ON.CF.8.eTap","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.5","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.5.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.6","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.6.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.7.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.8","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.8.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.9","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.Young.Hero","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Grand.Canyon.ON.AL.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Inflite.CF.SL.6","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Inflite.CF.SL.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Inflite.CF.SL.8","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Inflite.CF.SLX.9","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Inflite.CF.SLX.9.Team","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.6","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.7.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.SL.6.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.SL.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.SLX.9","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.SLX.9.Team","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.SLX.9.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.SLX.9.0.Race.Limited","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Lux.CF.SLX.9.0.Team","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.6","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.6.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.AL.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.CF.8","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.CF.9","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.CF.9.SL","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.CF.9.0.SL","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.CF.LTD","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.CF.SLX.9","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.WMN.AL.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.ON.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.ON.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Neuron.ON.9.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.5","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.5.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.6.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.AL.6.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.AL.SL.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.WMN.AL.6.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.ON.5.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.ON.6.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.ON.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Pathlite.ON.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Precede.ON.CF.8","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Precede.ON.CF.8.ST","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Precede.ON.CF.9","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Precede.ON.CF.9.ST","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.5","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.5.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.6","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.6.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.AL.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.CF.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.CF.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.CF.9.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.CF.9.0.LTD","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.WMN.CF.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.ON.AL.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.ON.AL.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Roadlite.ON.AL.9.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Sender.6","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Sender.CFR","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Sender.CFR.FMD","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.5","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.6","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.6.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.CF.7","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.CF.7.WMN","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.CF.9","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.CF.9.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.CFR.9.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.WMN.CF.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.ON.CF.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Spectral.ON.CF.9.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Speedmax.CF.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Speedmax.CF.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Speedmax.CF.8.0.LTD","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Speedmax.CF.SLX.8.0.SL","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Speedmax.CF.SLX.9.0.LTD","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Speedmax.CF.SLX.9.0.SL","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Speedmax.CF.SLX.9.0.TT","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Speedmax.WMN.CF.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Stitched.360","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Stitched.720","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Strive.CF.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Strive.CF.9.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Torque.AL.5.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Torque.AL.6.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Torque.CF.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SL.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SL.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SL.8.0.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SL.Disc.8.0.Di2.Aero","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SLX.8.0.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SLX.9.0.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SLX.Disc.8.0.ETAP","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SLX.Disc.9.0.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SLX.Disc.9.0.ETAP","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CF.SLX.Disc.9.0.Team.Movistar","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.CFR.Disc.EPS","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.WMN.CF.SL.Disc.7.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.WMN.CF.SL.Disc.8.0","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.WMN.CF.SL.Disc.8.0.Di2","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.WMN.CF.SL.Disc.8.0.ETAP","2":"numeric","3":"predictor","4":"derived"},{"1":"model_Ultimate.WMN.CF.SLX.Disc.9.0.ETAP","2":"numeric","3":"predictor","4":"derived"},{"1":"frame_material_carbon","2":"numeric","3":"predictor","4":"derived"},{"1":"category_1_Gravel","2":"numeric","3":"predictor","4":"derived"},{"1":"category_1_Hybrid...City","2":"numeric","3":"predictor","4":"derived"},{"1":"category_1_Mountain","2":"numeric","3":"predictor","4":"derived"},{"1":"category_1_Road","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_All.Road","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_City","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Cross.Country","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Cyclocross","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Dirt.Jump","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Downhill","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_E.City","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_E.Fitness","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_E.Gravel","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_E.Mountain","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_E.Road","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_E.Trekking","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Endurance","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Enduro","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Fat.Bikes","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Race","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Touring","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Trail","2":"numeric","3":"predictor","4":"derived"},{"1":"category_2_Triathlon.Bike","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Commuter","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Commuter.ON","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Dude","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Endurace","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Endurace.ON","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Exceed","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Grail","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Grail.ON","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Grand.Canyon","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Grand.Canyon.ON","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Inflite","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Lux","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Neuron","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Neuron.ON","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Pathlite","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Pathlite.ON","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Precede.ON","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Roadlite","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Roadlite.ON","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Sender","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Spectral","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Spectral.ON","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Speedmax","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Stitched","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Strive","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Torque","2":"numeric","3":"predictor","4":"derived"},{"1":"category_3_Ultimate","2":"numeric","3":"predictor","4":"derived"},{"1":"gender_unisex","2":"numeric","3":"predictor","4":"derived"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>summary(rec_data)</code></pre>
+<pre><code>##    model_year       weight            id            price     
+##  Min.   :2019   Min.   : 6.29   Min.   :  1.0   Min.   : 579  
+##  1st Qu.:2020   1st Qu.: 8.30   1st Qu.: 65.0   1st Qu.:1849  
+##  Median :2020   Median :10.30   Median :115.0   Median :2919  
+##  Mean   :2020   Mean   :11.73   Mean   :116.5   Mean   :3241  
+##  3rd Qu.:2021   3rd Qu.:13.95   3rd Qu.:169.0   3rd Qu.:4389  
+##  Max.   :2021   Max.   :27.04   Max.   :231.0   Max.   :8769  
+##  Rear_Derailleur_Campagnolo.Potenza.11.GS
+##  Min.   :0.00000                         
+##  1st Qu.:0.00000                         
+##  Median :0.00000                         
+##  Mean   :0.00578                         
+##  3rd Qu.:0.00000                         
+##  Max.   :1.00000                         
+##  Rear_Derailleur_Campagnolo.Super.Record.EPS..12.speed
+##  Min.   :0.00000                                      
+##  1st Qu.:0.00000                                      
+##  Median :0.00000                                      
+##  Mean   :0.01156                                      
+##  3rd Qu.:0.00000                                      
+##  Max.   :1.00000                                      
+##  Rear_Derailleur_Shimano.105.R7000.GS Rear_Derailleur_Shimano.105.R7000.SS
+##  Min.   :0.00000                      Min.   :0.00000                     
+##  1st Qu.:0.00000                      1st Qu.:0.00000                     
+##  Median :0.00000                      Median :0.00000                     
+##  Mean   :0.07514                      Mean   :0.01156                     
+##  3rd Qu.:0.00000                      3rd Qu.:0.00000                     
+##  Max.   :1.00000                      Max.   :1.00000                     
+##  Rear_Derailleur_Shimano.Deore.M5100.11s Rear_Derailleur_Shimano.Deore.M6000.GS
+##  Min.   :0.00000                         Min.   :0.00000                       
+##  1st Qu.:0.00000                         1st Qu.:0.00000                       
+##  Median :0.00000                         Median :0.00000                       
+##  Mean   :0.01734                         Mean   :0.00578                       
+##  3rd Qu.:0.00000                         3rd Qu.:0.00000                       
+##  Max.   :1.00000                         Max.   :1.00000                       
+##  Rear_Derailleur_Shimano.Deore.RD.M6100.12s Rear_Derailleur_Shimano.Deore.XT
+##  Min.   :0.00000                            Min.   :0.0000                  
+##  1st Qu.:0.00000                            1st Qu.:0.0000                  
+##  Median :0.00000                            Median :0.0000                  
+##  Mean   :0.01156                            Mean   :0.1329                  
+##  3rd Qu.:0.00000                            3rd Qu.:0.0000                  
+##  Max.   :1.00000                            Max.   :1.0000                  
+##  Rear_Derailleur_Shimano.Deore.XT.M8000.SGS Rear_Derailleur_Shimano.Deore.XTR
+##  Min.   :0.00000                            Min.   :0.00000                  
+##  1st Qu.:0.00000                            1st Qu.:0.00000                  
+##  Median :0.00000                            Median :0.00000                  
+##  Mean   :0.01734                            Mean   :0.04624                  
+##  3rd Qu.:0.00000                            3rd Qu.:0.00000                  
+##  Max.   :1.00000                            Max.   :1.00000                  
+##  Rear_Derailleur_Shimano.Deore..10s
+##  Min.   :0.00000                   
+##  1st Qu.:0.00000                   
+##  Median :0.00000                   
+##  Mean   :0.00578                   
+##  3rd Qu.:0.00000                   
+##  Max.   :1.00000                   
+##  Rear_Derailleur_Shimano.Dura.Ace.Di2.R9150..11.speed
+##  Min.   :0.00000                                     
+##  1st Qu.:0.00000                                     
+##  Median :0.00000                                     
+##  Mean   :0.04046                                     
+##  3rd Qu.:0.00000                                     
+##  Max.   :1.00000                                     
+##  Rear_Derailleur_Shimano.Dura.Ace.R9100.SS
+##  Min.   :0.00000                          
+##  1st Qu.:0.00000                          
+##  Median :0.00000                          
+##  Mean   :0.00578                          
+##  3rd Qu.:0.00000                          
+##  Max.   :1.00000                          
+##  Rear_Derailleur_Shimano.GRX.Di2.RX815.GS Rear_Derailleur_Shimano.GRX.RX400.GS
+##  Min.   :0.00000                          Min.   :0.00000                     
+##  1st Qu.:0.00000                          1st Qu.:0.00000                     
+##  Median :0.00000                          Median :0.00000                     
+##  Mean   :0.01734                          Mean   :0.00578                     
+##  3rd Qu.:0.00000                          3rd Qu.:0.00000                     
+##  Max.   :1.00000                          Max.   :1.00000                     
+##  Rear_Derailleur_Shimano.GRX.RX810.GS Rear_Derailleur_Shimano.GRX.RX812.GS
+##  Min.   :0.0000                       Min.   :0.0000                      
+##  1st Qu.:0.0000                       1st Qu.:0.0000                      
+##  Median :0.0000                       Median :0.0000                      
+##  Mean   :0.0289                       Mean   :0.0289                      
+##  3rd Qu.:0.0000                       3rd Qu.:0.0000                      
+##  Max.   :1.0000                       Max.   :1.0000                      
+##  Rear_Derailleur_Shimano.Saint.M820.SS Rear_Derailleur_Shimano.SLX.M7000.GS
+##  Min.   :0.00000                       Min.   :0.00000                     
+##  1st Qu.:0.00000                       1st Qu.:0.00000                     
+##  Median :0.00000                       Median :0.00000                     
+##  Mean   :0.00578                       Mean   :0.00578                     
+##  3rd Qu.:0.00000                       3rd Qu.:0.00000                     
+##  Max.   :1.00000                       Max.   :1.00000                     
+##  Rear_Derailleur_Shimano.SLX.M7100.SGS Rear_Derailleur_Shimano.Tiagra.4700.GS
+##  Min.   :0.00000                       Min.   :0.00000                       
+##  1st Qu.:0.00000                       1st Qu.:0.00000                       
+##  Median :0.00000                       Median :0.00000                       
+##  Mean   :0.01156                       Mean   :0.01156                       
+##  3rd Qu.:0.00000                       3rd Qu.:0.00000                       
+##  Max.   :1.00000                       Max.   :1.00000                       
+##  Rear_Derailleur_Shimano.Ultegra.Di2.R8050.GS
+##  Min.   :0.00000                             
+##  1st Qu.:0.00000                             
+##  Median :0.00000                             
+##  Mean   :0.01156                             
+##  3rd Qu.:0.00000                             
+##  Max.   :1.00000                             
+##  Rear_Derailleur_Shimano.Ultegra.Di2.R8050.SS
+##  Min.   :0.00000                             
+##  1st Qu.:0.00000                             
+##  Median :0.00000                             
+##  Mean   :0.04046                             
+##  3rd Qu.:0.00000                             
+##  Max.   :1.00000                             
+##  Rear_Derailleur_Shimano.Ultegra.Di2.RX805.GS
+##  Min.   :0.00000                             
+##  1st Qu.:0.00000                             
+##  Median :0.00000                             
+##  Mean   :0.00578                             
+##  3rd Qu.:0.00000                             
+##  Max.   :1.00000                             
+##  Rear_Derailleur_Shimano.Ultegra.R8000.SGS
+##  Min.   :0.00000                          
+##  1st Qu.:0.00000                          
+##  Median :0.00000                          
+##  Mean   :0.03468                          
+##  3rd Qu.:0.00000                          
+##  Max.   :1.00000                          
+##  Rear_Derailleur_Shimano.Ultegra.R8000.SS
+##  Min.   :0.00000                         
+##  1st Qu.:0.00000                         
+##  Median :0.00000                         
+##  Mean   :0.01734                         
+##  3rd Qu.:0.00000                         
+##  Max.   :1.00000                         
+##  Rear_Derailleur_Shimano.Ultegra.RX800.GS Rear_Derailleur_Shimano.XT.M8120.SGS
+##  Min.   :0.00000                          Min.   :0.00000                     
+##  1st Qu.:0.00000                          1st Qu.:0.00000                     
+##  Median :0.00000                          Median :0.00000                     
+##  Mean   :0.00578                          Mean   :0.01734                     
+##  3rd Qu.:0.00000                          3rd Qu.:0.00000                     
+##  Max.   :1.00000                          Max.   :1.00000                     
+##  Rear_Derailleur_SRAM.Apex.1.SGS Rear_Derailleur_SRAM.Force.1.GS
+##  Min.   :0.00000                 Min.   :0.00000                
+##  1st Qu.:0.00000                 1st Qu.:0.00000                
+##  Median :0.00000                 Median :0.00000                
+##  Mean   :0.01156                 Mean   :0.01156                
+##  3rd Qu.:0.00000                 3rd Qu.:0.00000                
+##  Max.   :1.00000                 Max.   :1.00000                
+##  Rear_Derailleur_SRAM.Force.CX1.SGS Rear_Derailleur_SRAM.Force.eTap.AXS.12s
+##  Min.   :0.00000                    Min.   :0.00000                        
+##  1st Qu.:0.00000                    1st Qu.:0.00000                        
+##  Median :0.00000                    Median :0.00000                        
+##  Mean   :0.00578                    Mean   :0.01734                        
+##  3rd Qu.:0.00000                    3rd Qu.:0.00000                        
+##  Max.   :1.00000                    Max.   :1.00000                        
+##  Rear_Derailleur_SRAM.Force.eTap.AXS..12.speed Rear_Derailleur_SRAM.GX.DH
+##  Min.   :0.0000                                Min.   :0.00000           
+##  1st Qu.:0.0000                                1st Qu.:0.00000           
+##  Median :0.0000                                Median :0.00000           
+##  Mean   :0.0289                                Mean   :0.00578           
+##  3rd Qu.:0.0000                                3rd Qu.:0.00000           
+##  Max.   :1.0000                                Max.   :1.00000           
+##  Rear_Derailleur_SRAM.GX.Eagle Rear_Derailleur_SRAM.NX.Eagle..12s
+##  Min.   :0.00000               Min.   :0.00000                   
+##  1st Qu.:0.00000               1st Qu.:0.00000                   
+##  Median :0.00000               Median :0.00000                   
+##  Mean   :0.06358               Mean   :0.03468                   
+##  3rd Qu.:0.00000               3rd Qu.:0.00000                   
+##  Max.   :1.00000               Max.   :1.00000                   
+##  Rear_Derailleur_SRAM.RED.eTap.AXS..12.speed Rear_Derailleur_SRAM.Rival.1.GS
+##  Min.   :0.0000                              Min.   :0.00000                
+##  1st Qu.:0.0000                              1st Qu.:0.00000                
+##  Median :0.0000                              Median :0.00000                
+##  Mean   :0.0289                              Mean   :0.00578                
+##  3rd Qu.:0.0000                              3rd Qu.:0.00000                
+##  Max.   :1.0000                              Max.   :1.00000                
+##  Rear_Derailleur_SRAM.SX.Eagle Rear_Derailleur_SRAM.X01.DH
+##  Min.   :0.00000               Min.   :0.00000            
+##  1st Qu.:0.00000               1st Qu.:0.00000            
+##  Median :0.00000               Median :0.00000            
+##  Mean   :0.01734               Mean   :0.00578            
+##  3rd Qu.:0.00000               3rd Qu.:0.00000            
+##  Max.   :1.00000               Max.   :1.00000            
+##  Rear_Derailleur_SRAM.X01.Eagle Rear_Derailleur_SRAM.X01.Eagle.AXS
+##  Min.   :0.00000                Min.   :0.00000                   
+##  1st Qu.:0.00000                1st Qu.:0.00000                   
+##  Median :0.00000                Median :0.00000                   
+##  Mean   :0.01734                Mean   :0.01734                   
+##  3rd Qu.:0.00000                3rd Qu.:0.00000                   
+##  Max.   :1.00000                Max.   :1.00000                   
+##  Rear_Derailleur_SRAM.XO1.Eagle Rear_Derailleur_SRAM.XX1.Eagle
+##  Min.   :0.00000                Min.   :0.00000               
+##  1st Qu.:0.00000                1st Qu.:0.00000               
+##  Median :0.00000                Median :0.00000               
+##  Mean   :0.02312                Mean   :0.00578               
+##  3rd Qu.:0.00000                3rd Qu.:0.00000               
+##  Max.   :1.00000                Max.   :1.00000               
+##  Rear_Derailleur_SRAM.XX1.Eagle.12s Rear_Derailleur_SRAM.XX1.Eagle.AXS
+##  Min.   :0.00000                    Min.   :0.00000                   
+##  1st Qu.:0.00000                    1st Qu.:0.00000                   
+##  Median :0.00000                    Median :0.00000                   
+##  Mean   :0.00578                    Mean   :0.01734                   
+##  3rd Qu.:0.00000                    3rd Qu.:0.00000                   
+##  Max.   :1.00000                    Max.   :1.00000                   
+##  model_Aeroad.CF.SL.Disc.8.0 model_Aeroad.CF.SL.Disc.8.0.Di2
+##  Min.   :0.00000             Min.   :0.00000                
+##  1st Qu.:0.00000             1st Qu.:0.00000                
+##  Median :0.00000             Median :0.00000                
+##  Mean   :0.00578             Mean   :0.00578                
+##  3rd Qu.:0.00000             3rd Qu.:0.00000                
+##  Max.   :1.00000             Max.   :1.00000                
+##  model_Aeroad.CF.SL.Disc.8.0.ETAP model_Aeroad.CF.SLX.9.0.SL
+##  Min.   :0.00000                  Min.   :0.00000           
+##  1st Qu.:0.00000                  1st Qu.:0.00000           
+##  Median :0.00000                  Median :0.00000           
+##  Mean   :0.00578                  Mean   :0.00578           
+##  3rd Qu.:0.00000                  3rd Qu.:0.00000           
+##  Max.   :1.00000                  Max.   :1.00000           
+##  model_Aeroad.CF.SLX.Disc.9.0.Di2 model_Aeroad.CF.SLX.Disc.9.0.ETAP
+##  Min.   :0.00000                  Min.   :0.00000                  
+##  1st Qu.:0.00000                  1st Qu.:0.00000                  
+##  Median :0.00000                  Median :0.00000                  
+##  Mean   :0.00578                  Mean   :0.00578                  
+##  3rd Qu.:0.00000                  3rd Qu.:0.00000                  
+##  Max.   :1.00000                  Max.   :1.00000                  
+##  model_Aeroad.WMN.CF.SL.8.0 model_Commuter.3.0 model_Commuter.4.0
+##  Min.   :0.00000            Min.   :0.00000    Min.   :0.00000   
+##  1st Qu.:0.00000            1st Qu.:0.00000    1st Qu.:0.00000   
+##  Median :0.00000            Median :0.00000    Median :0.00000   
+##  Mean   :0.00578            Mean   :0.00578    Mean   :0.00578   
+##  3rd Qu.:0.00000            3rd Qu.:0.00000    3rd Qu.:0.00000   
+##  Max.   :1.00000            Max.   :1.00000    Max.   :1.00000   
+##  model_Commuter.6.0 model_Commuter.8.0 model_Commuter.ON.7
+##  Min.   :0.00000    Min.   :0.00000    Min.   :0.00000    
+##  1st Qu.:0.00000    1st Qu.:0.00000    1st Qu.:0.00000    
+##  Median :0.00000    Median :0.00000    Median :0.00000    
+##  Mean   :0.00578    Mean   :0.00578    Mean   :0.00578    
+##  3rd Qu.:0.00000    3rd Qu.:0.00000    3rd Qu.:0.00000    
+##  Max.   :1.00000    Max.   :1.00000    Max.   :1.00000    
+##  model_Commuter.ON.7.WMN model_Dude.CF.8.0.Trail model_Dude.CF.9.0.Trail
+##  Min.   :0.00000         Min.   :0.00000         Min.   :0.00000        
+##  1st Qu.:0.00000         1st Qu.:0.00000         1st Qu.:0.00000        
+##  Median :0.00000         Median :0.00000         Median :0.00000        
+##  Mean   :0.00578         Mean   :0.00578         Mean   :0.00578        
+##  3rd Qu.:0.00000         3rd Qu.:0.00000         3rd Qu.:0.00000        
+##  Max.   :1.00000         Max.   :1.00000         Max.   :1.00000        
+##  model_Endurace.AL.7.0 model_Endurace.AL.Disc.6.0 model_Endurace.AL.Disc.7.0
+##  Min.   :0.00000       Min.   :0.00000            Min.   :0.00000           
+##  1st Qu.:0.00000       1st Qu.:0.00000            1st Qu.:0.00000           
+##  Median :0.00000       Median :0.00000            Median :0.00000           
+##  Mean   :0.00578       Mean   :0.00578            Mean   :0.00578           
+##  3rd Qu.:0.00000       3rd Qu.:0.00000            3rd Qu.:0.00000           
+##  Max.   :1.00000       Max.   :1.00000            Max.   :1.00000           
+##  model_Endurace.CF.7.0 model_Endurace.CF.8.0 model_Endurace.CF.SL.Disc.7.0
+##  Min.   :0.00000       Min.   :0.00000       Min.   :0.00000              
+##  1st Qu.:0.00000       1st Qu.:0.00000       1st Qu.:0.00000              
+##  Median :0.00000       Median :0.00000       Median :0.00000              
+##  Mean   :0.00578       Mean   :0.00578       Mean   :0.00578              
+##  3rd Qu.:0.00000       3rd Qu.:0.00000       3rd Qu.:0.00000              
+##  Max.   :1.00000       Max.   :1.00000       Max.   :1.00000              
+##  model_Endurace.CF.SL.Disc.8.0 model_Endurace.CF.SL.Disc.8.0.Pro
+##  Min.   :0.00000               Min.   :0.00000                  
+##  1st Qu.:0.00000               1st Qu.:0.00000                  
+##  Median :0.00000               Median :0.00000                  
+##  Mean   :0.00578               Mean   :0.00578                  
+##  3rd Qu.:0.00000               3rd Qu.:0.00000                  
+##  Max.   :1.00000               Max.   :1.00000                  
+##  model_Endurace.CF.SLX.Disc.9.0.ETAP model_Endurace.WMN.AL.Disc.6.0
+##  Min.   :0.00000                     Min.   :0.00000               
+##  1st Qu.:0.00000                     1st Qu.:0.00000               
+##  Median :0.00000                     Median :0.00000               
+##  Mean   :0.00578                     Mean   :0.00578               
+##  3rd Qu.:0.00000                     3rd Qu.:0.00000               
+##  Max.   :1.00000                     Max.   :1.00000               
+##  model_Endurace.WMN.AL.Disc.7.0 model_Endurace.WMN.CF.SL.Disc.7.0
+##  Min.   :0.00000                Min.   :0.00000                  
+##  1st Qu.:0.00000                1st Qu.:0.00000                  
+##  Median :0.00000                Median :0.00000                  
+##  Mean   :0.00578                Mean   :0.00578                  
+##  3rd Qu.:0.00000                3rd Qu.:0.00000                  
+##  Max.   :1.00000                Max.   :1.00000                  
+##  model_Endurace.WMN.CF.SL.Disc.8.0 model_Endurace.WMN.CF.SL.Disc.8.0.Di2
+##  Min.   :0.00000                   Min.   :0.00000                      
+##  1st Qu.:0.00000                   1st Qu.:0.00000                      
+##  Median :0.00000                   Median :0.00000                      
+##  Mean   :0.00578                   Mean   :0.00578                      
+##  3rd Qu.:0.00000                   3rd Qu.:0.00000                      
+##  Max.   :1.00000                   Max.   :1.00000                      
+##  model_Endurace.ON.7.0 model_Exceed.CF.5 model_Exceed.CF.5.WMN
+##  Min.   :0.00000       Min.   :0.00000   Min.   :0.00000      
+##  1st Qu.:0.00000       1st Qu.:0.00000   1st Qu.:0.00000      
+##  Median :0.00000       Median :0.00000   Median :0.00000      
+##  Mean   :0.00578       Mean   :0.00578   Mean   :0.00578      
+##  3rd Qu.:0.00000       3rd Qu.:0.00000   3rd Qu.:0.00000      
+##  Max.   :1.00000       Max.   :1.00000   Max.   :1.00000      
+##  model_Exceed.CF.7 model_Exceed.CF.7.WMN model_Exceed.CF.SLX.8
+##  Min.   :0.00000   Min.   :0.00000       Min.   :0.00000      
+##  1st Qu.:0.00000   1st Qu.:0.00000       1st Qu.:0.00000      
+##  Median :0.00000   Median :0.00000       Median :0.00000      
+##  Mean   :0.00578   Mean   :0.00578       Mean   :0.00578      
+##  3rd Qu.:0.00000   3rd Qu.:0.00000       3rd Qu.:0.00000      
+##  Max.   :1.00000   Max.   :1.00000       Max.   :1.00000      
+##  model_Exceed.CF.SLX.9 model_Exceed.CF.SLX.9.0.Race
+##  Min.   :0.00000       Min.   :0.00000             
+##  1st Qu.:0.00000       1st Qu.:0.00000             
+##  Median :0.00000       Median :0.00000             
+##  Mean   :0.00578       Mean   :0.00578             
+##  3rd Qu.:0.00000       3rd Qu.:0.00000             
+##  Max.   :1.00000       Max.   :1.00000             
+##  model_Exceed.CF.SLX.9.0.Race.LTD model_Exceed.CFR.LTD model_Exceed.CFR.Team
+##  Min.   :0.00000                  Min.   :0.00000      Min.   :0.00000      
+##  1st Qu.:0.00000                  1st Qu.:0.00000      1st Qu.:0.00000      
+##  Median :0.00000                  Median :0.00000      Median :0.00000      
+##  Mean   :0.00578                  Mean   :0.00578      Mean   :0.00578      
+##  3rd Qu.:0.00000                  3rd Qu.:0.00000      3rd Qu.:0.00000      
+##  Max.   :1.00000                  Max.   :1.00000      Max.   :1.00000      
+##  model_Grail.6.WMN model_Grail.7     model_Grail.7.1by model_Grail.7.WMN
+##  Min.   :0.00000   Min.   :0.00000   Min.   :0.00000   Min.   :0.00000  
+##  1st Qu.:0.00000   1st Qu.:0.00000   1st Qu.:0.00000   1st Qu.:0.00000  
+##  Median :0.00000   Median :0.00000   Median :0.00000   Median :0.00000  
+##  Mean   :0.00578   Mean   :0.00578   Mean   :0.00578   Mean   :0.00578  
+##  3rd Qu.:0.00000   3rd Qu.:0.00000   3rd Qu.:0.00000   3rd Qu.:0.00000  
+##  Max.   :1.00000   Max.   :1.00000   Max.   :1.00000   Max.   :1.00000  
+##  model_Grail.CF.SL.7 model_Grail.CF.SL.7.WMN model_Grail.CF.SL.8
+##  Min.   :0.00000     Min.   :0.00000         Min.   :0.00000    
+##  1st Qu.:0.00000     1st Qu.:0.00000         1st Qu.:0.00000    
+##  Median :0.00000     Median :0.00000         Median :0.00000    
+##  Mean   :0.00578     Mean   :0.00578         Mean   :0.00578    
+##  3rd Qu.:0.00000     3rd Qu.:0.00000         3rd Qu.:0.00000    
+##  Max.   :1.00000     Max.   :1.00000         Max.   :1.00000    
+##  model_Grail.CF.SL.8.Di2 model_Grail.CF.SL.8.eTap model_Grail.CF.SL.8.0.ETAP
+##  Min.   :0.00000         Min.   :0.00000          Min.   :0.00000           
+##  1st Qu.:0.00000         1st Qu.:0.00000          1st Qu.:0.00000           
+##  Median :0.00000         Median :0.00000          Median :0.00000           
+##  Mean   :0.00578         Mean   :0.00578          Mean   :0.00578           
+##  3rd Qu.:0.00000         3rd Qu.:0.00000          3rd Qu.:0.00000           
+##  Max.   :1.00000         Max.   :1.00000          Max.   :1.00000           
+##  model_Grail.CF.SLX.8.Di2 model_Grail.CF.SLX.8.eTap model_Grail.CF.SLX.8.0.Di2
+##  Min.   :0.00000          Min.   :0.00000           Min.   :0.00000           
+##  1st Qu.:0.00000          1st Qu.:0.00000           1st Qu.:0.00000           
+##  Median :0.00000          Median :0.00000           Median :0.00000           
+##  Mean   :0.00578          Mean   :0.00578           Mean   :0.00578           
+##  3rd Qu.:0.00000          3rd Qu.:0.00000           3rd Qu.:0.00000           
+##  Max.   :1.00000          Max.   :1.00000           Max.   :1.00000           
+##  model_Grail.ON.CF.7 model_Grail.ON.CF.7.WMN model_Grail.ON.CF.8
+##  Min.   :0.00000     Min.   :0.00000         Min.   :0.00000    
+##  1st Qu.:0.00000     1st Qu.:0.00000         1st Qu.:0.00000    
+##  Median :0.00000     Median :0.00000         Median :0.00000    
+##  Mean   :0.00578     Mean   :0.00578         Mean   :0.00578    
+##  3rd Qu.:0.00000     3rd Qu.:0.00000         3rd Qu.:0.00000    
+##  Max.   :1.00000     Max.   :1.00000         Max.   :1.00000    
+##  model_Grail.ON.CF.8.eTap model_Grand.Canyon.5 model_Grand.Canyon.5.WMN
+##  Min.   :0.00000          Min.   :0.00000      Min.   :0.00000         
+##  1st Qu.:0.00000          1st Qu.:0.00000      1st Qu.:0.00000         
+##  Median :0.00000          Median :0.00000      Median :0.00000         
+##  Mean   :0.00578          Mean   :0.00578      Mean   :0.00578         
+##  3rd Qu.:0.00000          3rd Qu.:0.00000      3rd Qu.:0.00000         
+##  Max.   :1.00000          Max.   :1.00000      Max.   :1.00000         
+##  model_Grand.Canyon.6 model_Grand.Canyon.6.WMN model_Grand.Canyon.7
+##  Min.   :0.00000      Min.   :0.00000          Min.   :0.00000     
+##  1st Qu.:0.00000      1st Qu.:0.00000          1st Qu.:0.00000     
+##  Median :0.00000      Median :0.00000          Median :0.00000     
+##  Mean   :0.00578      Mean   :0.00578          Mean   :0.00578     
+##  3rd Qu.:0.00000      3rd Qu.:0.00000          3rd Qu.:0.00000     
+##  Max.   :1.00000      Max.   :1.00000          Max.   :1.00000     
+##  model_Grand.Canyon.7.WMN model_Grand.Canyon.8 model_Grand.Canyon.8.WMN
+##  Min.   :0.00000          Min.   :0.00000      Min.   :0.00000         
+##  1st Qu.:0.00000          1st Qu.:0.00000      1st Qu.:0.00000         
+##  Median :0.00000          Median :0.00000      Median :0.00000         
+##  Mean   :0.00578          Mean   :0.00578      Mean   :0.00578         
+##  3rd Qu.:0.00000          3rd Qu.:0.00000      3rd Qu.:0.00000         
+##  Max.   :1.00000          Max.   :1.00000      Max.   :1.00000         
+##  model_Grand.Canyon.9 model_Grand.Canyon.Young.Hero
+##  Min.   :0.00000      Min.   :0.00000              
+##  1st Qu.:0.00000      1st Qu.:0.00000              
+##  Median :0.00000      Median :0.00000              
+##  Mean   :0.00578      Mean   :0.00578              
+##  3rd Qu.:0.00000      3rd Qu.:0.00000              
+##  Max.   :1.00000      Max.   :1.00000              
+##  model_Grand.Canyon.ON.AL.8.0 model_Inflite.CF.SL.6 model_Inflite.CF.SL.7
+##  Min.   :0.00000              Min.   :0.00000       Min.   :0.00000      
+##  1st Qu.:0.00000              1st Qu.:0.00000       1st Qu.:0.00000      
+##  Median :0.00000              Median :0.00000       Median :0.00000      
+##  Mean   :0.00578              Mean   :0.00578       Mean   :0.00578      
+##  3rd Qu.:0.00000              3rd Qu.:0.00000       3rd Qu.:0.00000      
+##  Max.   :1.00000              Max.   :1.00000       Max.   :1.00000      
+##  model_Inflite.CF.SL.8 model_Inflite.CF.SLX.9 model_Inflite.CF.SLX.9.Team
+##  Min.   :0.00000       Min.   :0.00000        Min.   :0.00000            
+##  1st Qu.:0.00000       1st Qu.:0.00000        1st Qu.:0.00000            
+##  Median :0.00000       Median :0.00000        Median :0.00000            
+##  Mean   :0.01156       Mean   :0.01156        Mean   :0.00578            
+##  3rd Qu.:0.00000       3rd Qu.:0.00000        3rd Qu.:0.00000            
+##  Max.   :1.00000       Max.   :1.00000        Max.   :1.00000            
+##  model_Lux.CF.6    model_Lux.CF.7    model_Lux.CF.7.WMN model_Lux.CF.SL.6.0
+##  Min.   :0.00000   Min.   :0.00000   Min.   :0.00000    Min.   :0.00000    
+##  1st Qu.:0.00000   1st Qu.:0.00000   1st Qu.:0.00000    1st Qu.:0.00000    
+##  Median :0.00000   Median :0.00000   Median :0.00000    Median :0.00000    
+##  Mean   :0.00578   Mean   :0.00578   Mean   :0.00578    Mean   :0.00578    
+##  3rd Qu.:0.00000   3rd Qu.:0.00000   3rd Qu.:0.00000    3rd Qu.:0.00000    
+##  Max.   :1.00000   Max.   :1.00000   Max.   :1.00000    Max.   :1.00000    
+##  model_Lux.CF.SL.8.0 model_Lux.CF.SLX.9 model_Lux.CF.SLX.9.Team
+##  Min.   :0.00000     Min.   :0.00000    Min.   :0.00000        
+##  1st Qu.:0.00000     1st Qu.:0.00000    1st Qu.:0.00000        
+##  Median :0.00000     Median :0.00000    Median :0.00000        
+##  Mean   :0.00578     Mean   :0.00578    Mean   :0.00578        
+##  3rd Qu.:0.00000     3rd Qu.:0.00000    3rd Qu.:0.00000        
+##  Max.   :1.00000     Max.   :1.00000    Max.   :1.00000        
+##  model_Lux.CF.SLX.9.0 model_Lux.CF.SLX.9.0.Race.Limited
+##  Min.   :0.00000      Min.   :0.00000                  
+##  1st Qu.:0.00000      1st Qu.:0.00000                  
+##  Median :0.00000      Median :0.00000                  
+##  Mean   :0.00578      Mean   :0.00578                  
+##  3rd Qu.:0.00000      3rd Qu.:0.00000                  
+##  Max.   :1.00000      Max.   :1.00000                  
+##  model_Lux.CF.SLX.9.0.Team model_Neuron.6    model_Neuron.6.WMN
+##  Min.   :0.00000           Min.   :0.00000   Min.   :0.00000   
+##  1st Qu.:0.00000           1st Qu.:0.00000   1st Qu.:0.00000   
+##  Median :0.00000           Median :0.00000   Median :0.00000   
+##  Mean   :0.00578           Mean   :0.00578   Mean   :0.00578   
+##  3rd Qu.:0.00000           3rd Qu.:0.00000   3rd Qu.:0.00000   
+##  Max.   :1.00000           Max.   :1.00000   Max.   :1.00000   
+##  model_Neuron.7    model_Neuron.AL.7.0 model_Neuron.CF.8 model_Neuron.CF.9
+##  Min.   :0.00000   Min.   :0.00000     Min.   :0.00000   Min.   :0.00000  
+##  1st Qu.:0.00000   1st Qu.:0.00000     1st Qu.:0.00000   1st Qu.:0.00000  
+##  Median :0.00000   Median :0.00000     Median :0.00000   Median :0.00000  
+##  Mean   :0.00578   Mean   :0.00578     Mean   :0.00578   Mean   :0.00578  
+##  3rd Qu.:0.00000   3rd Qu.:0.00000     3rd Qu.:0.00000   3rd Qu.:0.00000  
+##  Max.   :1.00000   Max.   :1.00000     Max.   :1.00000   Max.   :1.00000  
+##  model_Neuron.CF.9.SL model_Neuron.CF.9.0.SL model_Neuron.CF.LTD
+##  Min.   :0.00000      Min.   :0.00000        Min.   :0.00000    
+##  1st Qu.:0.00000      1st Qu.:0.00000        1st Qu.:0.00000    
+##  Median :0.00000      Median :0.00000        Median :0.00000    
+##  Mean   :0.00578      Mean   :0.00578        Mean   :0.00578    
+##  3rd Qu.:0.00000      3rd Qu.:0.00000        3rd Qu.:0.00000    
+##  Max.   :1.00000      Max.   :1.00000        Max.   :1.00000    
+##  model_Neuron.CF.SLX.9 model_Neuron.WMN.AL.7.0 model_Neuron.ON.7.0
+##  Min.   :0.00000       Min.   :0.00000         Min.   :0.00000    
+##  1st Qu.:0.00000       1st Qu.:0.00000         1st Qu.:0.00000    
+##  Median :0.00000       Median :0.00000         Median :0.00000    
+##  Mean   :0.00578       Mean   :0.00578         Mean   :0.00578    
+##  3rd Qu.:0.00000       3rd Qu.:0.00000         3rd Qu.:0.00000    
+##  Max.   :1.00000       Max.   :1.00000         Max.   :1.00000    
+##  model_Neuron.ON.8.0 model_Neuron.ON.9.0 model_Pathlite.5  model_Pathlite.5.WMN
+##  Min.   :0.00000     Min.   :0.00000     Min.   :0.00000   Min.   :0.00000     
+##  1st Qu.:0.00000     1st Qu.:0.00000     1st Qu.:0.00000   1st Qu.:0.00000     
+##  Median :0.00000     Median :0.00000     Median :0.00000   Median :0.00000     
+##  Mean   :0.00578     Mean   :0.00578     Mean   :0.00578   Mean   :0.00578     
+##  3rd Qu.:0.00000     3rd Qu.:0.00000     3rd Qu.:0.00000   3rd Qu.:0.00000     
+##  Max.   :1.00000     Max.   :1.00000     Max.   :1.00000   Max.   :1.00000     
+##  model_Pathlite.6.WMN model_Pathlite.AL.6.0 model_Pathlite.AL.SL.7.0
+##  Min.   :0.00000      Min.   :0.00000       Min.   :0.00000         
+##  1st Qu.:0.00000      1st Qu.:0.00000       1st Qu.:0.00000         
+##  Median :0.00000      Median :0.00000       Median :0.00000         
+##  Mean   :0.00578      Mean   :0.00578       Mean   :0.00578         
+##  3rd Qu.:0.00000      3rd Qu.:0.00000       3rd Qu.:0.00000         
+##  Max.   :1.00000      Max.   :1.00000       Max.   :1.00000         
+##  model_Pathlite.WMN.AL.6.0 model_Pathlite.ON.5.0 model_Pathlite.ON.6.0
+##  Min.   :0.00000           Min.   :0.00000       Min.   :0.00000      
+##  1st Qu.:0.00000           1st Qu.:0.00000       1st Qu.:0.00000      
+##  Median :0.00000           Median :0.00000       Median :0.00000      
+##  Mean   :0.00578           Mean   :0.00578       Mean   :0.00578      
+##  3rd Qu.:0.00000           3rd Qu.:0.00000       3rd Qu.:0.00000      
+##  Max.   :1.00000           Max.   :1.00000       Max.   :1.00000      
+##  model_Pathlite.ON.7.0 model_Pathlite.ON.8.0 model_Precede.ON.CF.8
+##  Min.   :0.00000       Min.   :0.00000       Min.   :0.00000      
+##  1st Qu.:0.00000       1st Qu.:0.00000       1st Qu.:0.00000      
+##  Median :0.00000       Median :0.00000       Median :0.00000      
+##  Mean   :0.00578       Mean   :0.00578       Mean   :0.00578      
+##  3rd Qu.:0.00000       3rd Qu.:0.00000       3rd Qu.:0.00000      
+##  Max.   :1.00000       Max.   :1.00000       Max.   :1.00000      
+##  model_Precede.ON.CF.8.ST model_Precede.ON.CF.9 model_Precede.ON.CF.9.ST
+##  Min.   :0.00000          Min.   :0.00000       Min.   :0.00000         
+##  1st Qu.:0.00000          1st Qu.:0.00000       1st Qu.:0.00000         
+##  Median :0.00000          Median :0.00000       Median :0.00000         
+##  Mean   :0.00578          Mean   :0.00578       Mean   :0.00578         
+##  3rd Qu.:0.00000          3rd Qu.:0.00000       3rd Qu.:0.00000         
+##  Max.   :1.00000          Max.   :1.00000       Max.   :1.00000         
+##  model_Roadlite.5  model_Roadlite.5.WMN model_Roadlite.6  model_Roadlite.6.WMN
+##  Min.   :0.00000   Min.   :0.00000      Min.   :0.00000   Min.   :0.00000     
+##  1st Qu.:0.00000   1st Qu.:0.00000      1st Qu.:0.00000   1st Qu.:0.00000     
+##  Median :0.00000   Median :0.00000      Median :0.00000   Median :0.00000     
+##  Mean   :0.00578   Mean   :0.00578      Mean   :0.00578   Mean   :0.00578     
+##  3rd Qu.:0.00000   3rd Qu.:0.00000      3rd Qu.:0.00000   3rd Qu.:0.00000     
+##  Max.   :1.00000   Max.   :1.00000      Max.   :1.00000   Max.   :1.00000     
+##  model_Roadlite.AL.7.0 model_Roadlite.CF.7.0 model_Roadlite.CF.8.0
+##  Min.   :0.00000       Min.   :0.00000       Min.   :0.00000      
+##  1st Qu.:0.00000       1st Qu.:0.00000       1st Qu.:0.00000      
+##  Median :0.00000       Median :0.00000       Median :0.00000      
+##  Mean   :0.00578       Mean   :0.00578       Mean   :0.00578      
+##  3rd Qu.:0.00000       3rd Qu.:0.00000       3rd Qu.:0.00000      
+##  Max.   :1.00000       Max.   :1.00000       Max.   :1.00000      
+##  model_Roadlite.CF.9.0 model_Roadlite.CF.9.0.LTD model_Roadlite.WMN.CF.7.0
+##  Min.   :0.00000       Min.   :0.00000           Min.   :0.00000          
+##  1st Qu.:0.00000       1st Qu.:0.00000           1st Qu.:0.00000          
+##  Median :0.00000       Median :0.00000           Median :0.00000          
+##  Mean   :0.00578       Mean   :0.00578           Mean   :0.00578          
+##  3rd Qu.:0.00000       3rd Qu.:0.00000           3rd Qu.:0.00000          
+##  Max.   :1.00000       Max.   :1.00000           Max.   :1.00000          
+##  model_Roadlite.ON.AL.7.0 model_Roadlite.ON.AL.8.0 model_Roadlite.ON.AL.9.0
+##  Min.   :0.00000          Min.   :0.00000          Min.   :0.00000         
+##  1st Qu.:0.00000          1st Qu.:0.00000          1st Qu.:0.00000         
+##  Median :0.00000          Median :0.00000          Median :0.00000         
+##  Mean   :0.00578          Mean   :0.00578          Mean   :0.00578         
+##  3rd Qu.:0.00000          3rd Qu.:0.00000          3rd Qu.:0.00000         
+##  Max.   :1.00000          Max.   :1.00000          Max.   :1.00000         
+##  model_Sender.6    model_Sender.CFR  model_Sender.CFR.FMD model_Spectral.5 
+##  Min.   :0.00000   Min.   :0.00000   Min.   :0.00000      Min.   :0.00000  
+##  1st Qu.:0.00000   1st Qu.:0.00000   1st Qu.:0.00000      1st Qu.:0.00000  
+##  Median :0.00000   Median :0.00000   Median :0.00000      Median :0.00000  
+##  Mean   :0.00578   Mean   :0.00578   Mean   :0.00578      Mean   :0.00578  
+##  3rd Qu.:0.00000   3rd Qu.:0.00000   3rd Qu.:0.00000      3rd Qu.:0.00000  
+##  Max.   :1.00000   Max.   :1.00000   Max.   :1.00000      Max.   :1.00000  
+##  model_Spectral.6  model_Spectral.6.WMN model_Spectral.CF.7
+##  Min.   :0.00000   Min.   :0.00000      Min.   :0.00000    
+##  1st Qu.:0.00000   1st Qu.:0.00000      1st Qu.:0.00000    
+##  Median :0.00000   Median :0.00000      Median :0.00000    
+##  Mean   :0.00578   Mean   :0.00578      Mean   :0.00578    
+##  3rd Qu.:0.00000   3rd Qu.:0.00000      3rd Qu.:0.00000    
+##  Max.   :1.00000   Max.   :1.00000      Max.   :1.00000    
+##  model_Spectral.CF.7.WMN model_Spectral.CF.9 model_Spectral.CF.9.0
+##  Min.   :0.00000         Min.   :0.00000     Min.   :0.00000      
+##  1st Qu.:0.00000         1st Qu.:0.00000     1st Qu.:0.00000      
+##  Median :0.00000         Median :0.00000     Median :0.00000      
+##  Mean   :0.00578         Mean   :0.00578     Mean   :0.00578      
+##  3rd Qu.:0.00000         3rd Qu.:0.00000     3rd Qu.:0.00000      
+##  Max.   :1.00000         Max.   :1.00000     Max.   :1.00000      
+##  model_Spectral.CFR.9.0 model_Spectral.WMN.CF.8.0 model_Spectral.ON.CF.8.0
+##  Min.   :0.00000        Min.   :0.00000           Min.   :0.00000         
+##  1st Qu.:0.00000        1st Qu.:0.00000           1st Qu.:0.00000         
+##  Median :0.00000        Median :0.00000           Median :0.00000         
+##  Mean   :0.00578        Mean   :0.00578           Mean   :0.00578         
+##  3rd Qu.:0.00000        3rd Qu.:0.00000           3rd Qu.:0.00000         
+##  Max.   :1.00000        Max.   :1.00000           Max.   :1.00000         
+##  model_Spectral.ON.CF.9.0 model_Speedmax.CF.7.0 model_Speedmax.CF.8.0
+##  Min.   :0.00000          Min.   :0.00000       Min.   :0.00000      
+##  1st Qu.:0.00000          1st Qu.:0.00000       1st Qu.:0.00000      
+##  Median :0.00000          Median :0.00000       Median :0.00000      
+##  Mean   :0.00578          Mean   :0.00578       Mean   :0.00578      
+##  3rd Qu.:0.00000          3rd Qu.:0.00000       3rd Qu.:0.00000      
+##  Max.   :1.00000          Max.   :1.00000       Max.   :1.00000      
+##  model_Speedmax.CF.8.0.LTD model_Speedmax.CF.SLX.8.0.SL
+##  Min.   :0.00000           Min.   :0.00000             
+##  1st Qu.:0.00000           1st Qu.:0.00000             
+##  Median :0.00000           Median :0.00000             
+##  Mean   :0.00578           Mean   :0.00578             
+##  3rd Qu.:0.00000           3rd Qu.:0.00000             
+##  Max.   :1.00000           Max.   :1.00000             
+##  model_Speedmax.CF.SLX.9.0.LTD model_Speedmax.CF.SLX.9.0.SL
+##  Min.   :0.00000               Min.   :0.00000             
+##  1st Qu.:0.00000               1st Qu.:0.00000             
+##  Median :0.00000               Median :0.00000             
+##  Mean   :0.00578               Mean   :0.00578             
+##  3rd Qu.:0.00000               3rd Qu.:0.00000             
+##  Max.   :1.00000               Max.   :1.00000             
+##  model_Speedmax.CF.SLX.9.0.TT model_Speedmax.WMN.CF.7.0 model_Stitched.360
+##  Min.   :0.00000              Min.   :0.00000           Min.   :0.00000   
+##  1st Qu.:0.00000              1st Qu.:0.00000           1st Qu.:0.00000   
+##  Median :0.00000              Median :0.00000           Median :0.00000   
+##  Mean   :0.00578              Mean   :0.00578           Mean   :0.00578   
+##  3rd Qu.:0.00000              3rd Qu.:0.00000           3rd Qu.:0.00000   
+##  Max.   :1.00000              Max.   :1.00000           Max.   :1.00000   
+##  model_Stitched.720 model_Strive.CF.7.0 model_Strive.CF.9.0 model_Torque.AL.5.0
+##  Min.   :0.00000    Min.   :0.00000     Min.   :0.00000     Min.   :0.00000    
+##  1st Qu.:0.00000    1st Qu.:0.00000     1st Qu.:0.00000     1st Qu.:0.00000    
+##  Median :0.00000    Median :0.00000     Median :0.00000     Median :0.00000    
+##  Mean   :0.00578    Mean   :0.00578     Mean   :0.00578     Mean   :0.00578    
+##  3rd Qu.:0.00000    3rd Qu.:0.00000     3rd Qu.:0.00000     3rd Qu.:0.00000    
+##  Max.   :1.00000    Max.   :1.00000     Max.   :1.00000     Max.   :1.00000    
+##  model_Torque.AL.6.0 model_Torque.CF.7.0 model_Ultimate.CF.SL.7.0
+##  Min.   :0.00000     Min.   :0.00000     Min.   :0.00000         
+##  1st Qu.:0.00000     1st Qu.:0.00000     1st Qu.:0.00000         
+##  Median :0.00000     Median :0.00000     Median :0.00000         
+##  Mean   :0.00578     Mean   :0.00578     Mean   :0.00578         
+##  3rd Qu.:0.00000     3rd Qu.:0.00000     3rd Qu.:0.00000         
+##  Max.   :1.00000     Max.   :1.00000     Max.   :1.00000         
+##  model_Ultimate.CF.SL.8.0 model_Ultimate.CF.SL.8.0.Di2
+##  Min.   :0.00000          Min.   :0.00000             
+##  1st Qu.:0.00000          1st Qu.:0.00000             
+##  Median :0.00000          Median :0.00000             
+##  Mean   :0.00578          Mean   :0.00578             
+##  3rd Qu.:0.00000          3rd Qu.:0.00000             
+##  Max.   :1.00000          Max.   :1.00000             
+##  model_Ultimate.CF.SL.Disc.8.0.Di2.Aero model_Ultimate.CF.SLX.8.0.Di2
+##  Min.   :0.00000                        Min.   :0.00000              
+##  1st Qu.:0.00000                        1st Qu.:0.00000              
+##  Median :0.00000                        Median :0.00000              
+##  Mean   :0.00578                        Mean   :0.00578              
+##  3rd Qu.:0.00000                        3rd Qu.:0.00000              
+##  Max.   :1.00000                        Max.   :1.00000              
+##  model_Ultimate.CF.SLX.9.0.Di2 model_Ultimate.CF.SLX.Disc.8.0.ETAP
+##  Min.   :0.00000               Min.   :0.00000                    
+##  1st Qu.:0.00000               1st Qu.:0.00000                    
+##  Median :0.00000               Median :0.00000                    
+##  Mean   :0.01156               Mean   :0.00578                    
+##  3rd Qu.:0.00000               3rd Qu.:0.00000                    
+##  Max.   :1.00000               Max.   :1.00000                    
+##  model_Ultimate.CF.SLX.Disc.9.0.Di2 model_Ultimate.CF.SLX.Disc.9.0.ETAP
+##  Min.   :0.00000                    Min.   :0.00000                    
+##  1st Qu.:0.00000                    1st Qu.:0.00000                    
+##  Median :0.00000                    Median :0.00000                    
+##  Mean   :0.00578                    Mean   :0.00578                    
+##  3rd Qu.:0.00000                    3rd Qu.:0.00000                    
+##  Max.   :1.00000                    Max.   :1.00000                    
+##  model_Ultimate.CF.SLX.Disc.9.0.Team.Movistar model_Ultimate.CFR.Disc.EPS
+##  Min.   :0.00000                              Min.   :0.00000            
+##  1st Qu.:0.00000                              1st Qu.:0.00000            
+##  Median :0.00000                              Median :0.00000            
+##  Mean   :0.00578                              Mean   :0.00578            
+##  3rd Qu.:0.00000                              3rd Qu.:0.00000            
+##  Max.   :1.00000                              Max.   :1.00000            
+##  model_Ultimate.WMN.CF.SL.Disc.7.0 model_Ultimate.WMN.CF.SL.Disc.8.0
+##  Min.   :0.00000                   Min.   :0.00000                  
+##  1st Qu.:0.00000                   1st Qu.:0.00000                  
+##  Median :0.00000                   Median :0.00000                  
+##  Mean   :0.00578                   Mean   :0.00578                  
+##  3rd Qu.:0.00000                   3rd Qu.:0.00000                  
+##  Max.   :1.00000                   Max.   :1.00000                  
+##  model_Ultimate.WMN.CF.SL.Disc.8.0.Di2 model_Ultimate.WMN.CF.SL.Disc.8.0.ETAP
+##  Min.   :0.00000                       Min.   :0.00000                       
+##  1st Qu.:0.00000                       1st Qu.:0.00000                       
+##  Median :0.00000                       Median :0.00000                       
+##  Mean   :0.00578                       Mean   :0.00578                       
+##  3rd Qu.:0.00000                       3rd Qu.:0.00000                       
+##  Max.   :1.00000                       Max.   :1.00000                       
+##  model_Ultimate.WMN.CF.SLX.Disc.9.0.ETAP frame_material_carbon
+##  Min.   :0.00000                         Min.   :0.0000       
+##  1st Qu.:0.00000                         1st Qu.:0.0000       
+##  Median :0.00000                         Median :1.0000       
+##  Mean   :0.00578                         Mean   :0.6416       
+##  3rd Qu.:0.00000                         3rd Qu.:1.0000       
+##  Max.   :1.00000                         Max.   :1.0000       
+##  category_1_Gravel category_1_Hybrid...City category_1_Mountain
+##  Min.   :0.00000   Min.   :0.0000           Min.   :0.0000     
+##  1st Qu.:0.00000   1st Qu.:0.0000           1st Qu.:0.0000     
+##  Median :0.00000   Median :0.0000           Median :0.0000     
+##  Mean   :0.07514   Mean   :0.1156           Mean   :0.3584     
+##  3rd Qu.:0.00000   3rd Qu.:0.0000           3rd Qu.:1.0000     
+##  Max.   :1.00000   Max.   :1.0000           Max.   :1.0000     
+##  category_1_Road  category_2_All.Road category_2_City  
+##  Min.   :0.0000   Min.   :0.00000     Min.   :0.00000  
+##  1st Qu.:0.0000   1st Qu.:0.00000     1st Qu.:0.00000  
+##  Median :0.0000   Median :0.00000     Median :0.00000  
+##  Mean   :0.3121   Mean   :0.06936     Mean   :0.08092  
+##  3rd Qu.:1.0000   3rd Qu.:0.00000     3rd Qu.:0.00000  
+##  Max.   :1.0000   Max.   :1.00000     Max.   :1.00000  
+##  category_2_Cross.Country category_2_Cyclocross category_2_Dirt.Jump
+##  Min.   :0.0000           Min.   :0.00000       Min.   :0.00000     
+##  1st Qu.:0.0000           1st Qu.:0.00000       1st Qu.:0.00000     
+##  Median :0.0000           Median :0.00000       Median :0.00000     
+##  Mean   :0.1156           Mean   :0.04046       Mean   :0.01156     
+##  3rd Qu.:0.0000           3rd Qu.:0.00000       3rd Qu.:0.00000     
+##  Max.   :1.0000           Max.   :1.00000       Max.   :1.00000     
+##  category_2_Downhill category_2_E.City category_2_E.Fitness category_2_E.Gravel
+##  Min.   :0.00000     Min.   :0.00000   Min.   :0.00000      Min.   :0.00000    
+##  1st Qu.:0.00000     1st Qu.:0.00000   1st Qu.:0.00000      1st Qu.:0.00000    
+##  Median :0.00000     Median :0.00000   Median :0.00000      Median :0.00000    
+##  Mean   :0.01734     Mean   :0.03468   Mean   :0.01734      Mean   :0.02312    
+##  3rd Qu.:0.00000     3rd Qu.:0.00000   3rd Qu.:0.00000      3rd Qu.:0.00000    
+##  Max.   :1.00000     Max.   :1.00000   Max.   :1.00000      Max.   :1.00000    
+##  category_2_E.Mountain category_2_E.Road category_2_E.Trekking
+##  Min.   :0.00000       Min.   :0.00000   Min.   :0.00000      
+##  1st Qu.:0.00000       1st Qu.:0.00000   1st Qu.:0.00000      
+##  Median :0.00000       Median :0.00000   Median :0.00000      
+##  Mean   :0.03468       Mean   :0.00578   Mean   :0.02312      
+##  3rd Qu.:0.00000       3rd Qu.:0.00000   3rd Qu.:0.00000      
+##  Max.   :1.00000       Max.   :1.00000   Max.   :1.00000      
+##  category_2_Endurance category_2_Enduro category_2_Fat.Bikes category_2_Race 
+##  Min.   :0.00000      Min.   :0.0000    Min.   :0.00000      Min.   :0.0000  
+##  1st Qu.:0.00000      1st Qu.:0.0000    1st Qu.:0.00000      1st Qu.:0.0000  
+##  Median :0.00000      Median :0.0000    Median :0.00000      Median :0.0000  
+##  Mean   :0.08092      Mean   :0.0289    Mean   :0.01156      Mean   :0.1445  
+##  3rd Qu.:0.00000      3rd Qu.:0.0000    3rd Qu.:0.00000      3rd Qu.:0.0000  
+##  Max.   :1.00000      Max.   :1.0000    Max.   :1.00000      Max.   :1.0000  
+##  category_2_Touring category_2_Trail category_2_Triathlon.Bike
+##  Min.   :0.00000    Min.   :0.0000   Min.   :0.00000          
+##  1st Qu.:0.00000    1st Qu.:0.0000   1st Qu.:0.00000          
+##  Median :0.00000    Median :0.0000   Median :0.00000          
+##  Mean   :0.03468    Mean   :0.1734   Mean   :0.04624          
+##  3rd Qu.:0.00000    3rd Qu.:0.0000   3rd Qu.:0.00000          
+##  Max.   :1.00000    Max.   :1.0000   Max.   :1.00000          
+##  category_3_Commuter category_3_Commuter.ON category_3_Dude  
+##  Min.   :0.00000     Min.   :0.00000        Min.   :0.00000  
+##  1st Qu.:0.00000     1st Qu.:0.00000        1st Qu.:0.00000  
+##  Median :0.00000     Median :0.00000        Median :0.00000  
+##  Mean   :0.02312     Mean   :0.01156        Mean   :0.01156  
+##  3rd Qu.:0.00000     3rd Qu.:0.00000        3rd Qu.:0.00000  
+##  Max.   :1.00000     Max.   :1.00000        Max.   :1.00000  
+##  category_3_Endurace category_3_Endurace.ON category_3_Exceed category_3_Grail 
+##  Min.   :0.00000     Min.   :0.00000        Min.   :0.0000    Min.   :0.00000  
+##  1st Qu.:0.00000     1st Qu.:0.00000        1st Qu.:0.0000    1st Qu.:0.00000  
+##  Median :0.00000     Median :0.00000        Median :0.0000    Median :0.00000  
+##  Mean   :0.08092     Mean   :0.00578        Mean   :0.0578    Mean   :0.07514  
+##  3rd Qu.:0.00000     3rd Qu.:0.00000        3rd Qu.:0.0000    3rd Qu.:0.00000  
+##  Max.   :1.00000     Max.   :1.00000        Max.   :1.0000    Max.   :1.00000  
+##  category_3_Grail.ON category_3_Grand.Canyon category_3_Grand.Canyon.ON
+##  Min.   :0.00000     Min.   :0.0000          Min.   :0.00000           
+##  1st Qu.:0.00000     1st Qu.:0.0000          1st Qu.:0.00000           
+##  Median :0.00000     Median :0.0000          Median :0.00000           
+##  Mean   :0.02312     Mean   :0.0578          Mean   :0.00578           
+##  3rd Qu.:0.00000     3rd Qu.:0.0000          3rd Qu.:0.00000           
+##  Max.   :1.00000     Max.   :1.0000          Max.   :1.00000           
+##  category_3_Inflite category_3_Lux   category_3_Neuron category_3_Neuron.ON
+##  Min.   :0.00000    Min.   :0.0000   Min.   :0.00000   Min.   :0.00000     
+##  1st Qu.:0.00000    1st Qu.:0.0000   1st Qu.:0.00000   1st Qu.:0.00000     
+##  Median :0.00000    Median :0.0000   Median :0.00000   Median :0.00000     
+##  Mean   :0.04046    Mean   :0.0578   Mean   :0.06358   Mean   :0.01734     
+##  3rd Qu.:0.00000    3rd Qu.:0.0000   3rd Qu.:0.00000   3rd Qu.:0.00000     
+##  Max.   :1.00000    Max.   :1.0000   Max.   :1.00000   Max.   :1.00000     
+##  category_3_Pathlite category_3_Pathlite.ON category_3_Precede.ON
+##  Min.   :0.00000     Min.   :0.00000        Min.   :0.00000      
+##  1st Qu.:0.00000     1st Qu.:0.00000        1st Qu.:0.00000      
+##  Median :0.00000     Median :0.00000        Median :0.00000      
+##  Mean   :0.03468     Mean   :0.02312        Mean   :0.02312      
+##  3rd Qu.:0.00000     3rd Qu.:0.00000        3rd Qu.:0.00000      
+##  Max.   :1.00000     Max.   :1.00000        Max.   :1.00000      
+##  category_3_Roadlite category_3_Roadlite.ON category_3_Sender
+##  Min.   :0.0000      Min.   :0.00000        Min.   :0.00000  
+##  1st Qu.:0.0000      1st Qu.:0.00000        1st Qu.:0.00000  
+##  Median :0.0000      Median :0.00000        Median :0.00000  
+##  Mean   :0.0578      Mean   :0.01734        Mean   :0.01734  
+##  3rd Qu.:0.0000      3rd Qu.:0.00000        3rd Qu.:0.00000  
+##  Max.   :1.0000      Max.   :1.00000        Max.   :1.00000  
+##  category_3_Spectral category_3_Spectral.ON category_3_Speedmax
+##  Min.   :0.00000     Min.   :0.00000        Min.   :0.00000    
+##  1st Qu.:0.00000     1st Qu.:0.00000        1st Qu.:0.00000    
+##  Median :0.00000     Median :0.00000        Median :0.00000    
+##  Mean   :0.05202     Mean   :0.01156        Mean   :0.04624    
+##  3rd Qu.:0.00000     3rd Qu.:0.00000        3rd Qu.:0.00000    
+##  Max.   :1.00000     Max.   :1.00000        Max.   :1.00000    
+##  category_3_Stitched category_3_Strive category_3_Torque category_3_Ultimate
+##  Min.   :0.00000     Min.   :0.00000   Min.   :0.00000   Min.   :0.00000    
+##  1st Qu.:0.00000     1st Qu.:0.00000   1st Qu.:0.00000   1st Qu.:0.00000    
+##  Median :0.00000     Median :0.00000   Median :0.00000   Median :0.00000    
+##  Mean   :0.01156     Mean   :0.01156   Mean   :0.01734   Mean   :0.09827    
+##  3rd Qu.:0.00000     3rd Qu.:0.00000   3rd Qu.:0.00000   3rd Qu.:0.00000    
+##  Max.   :1.00000     Max.   :1.00000   Max.   :1.00000   Max.   :1.00000    
+##  gender_unisex   
+##  Min.   :0.0000  
+##  1st Qu.:1.0000  
+##  Median :1.0000  
+##  Mean   :0.7977  
+##  3rd Qu.:1.0000  
+##  Max.   :1.0000</code></pre>
+</div>
+<div id="using-workflow" class="section level1">
+<h1><span class="header-section-number">6</span> Using Workflow</h1>
+<pre class="r"><code>rec_workflow &lt;- 
+  workflow() %&gt;% 
+  add_model(model_boost_tree_xgboost) %&gt;% 
+  add_recipe(train_recipe)
+rec_workflow</code></pre>
+<pre><code>## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: boost_tree()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## 1 Recipe Step
+## 
+## • step_dummy()
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## Boosted Tree Model Specification (regression)
+## 
+## Main Arguments:
+##   mtry = 30
+##   tree_depth = 10
+##   learn_rate = 0.1
+## 
+## Computational engine: xgboost</code></pre>
+<pre class="r"><code>rec_fit &lt;- 
+  rec_workflow %&gt;% 
+  fit(data = train_data)</code></pre>
+</div>
+<div id="evaluation-metrics" class="section level1">
+<h1><span class="header-section-number">7</span> Evaluation metrics</h1>
+<pre class="r"><code>rec_fit %&gt;%
+    predict(new_data = test_data) %&gt;%
+    bind_cols(test_data %&gt;% select(price)) %&gt;%
+    # Manual approach
+    # mutate(residuals = price - .pred) %&gt;% 
+    # 
+    # summarize(
+    #   mae  = abs(residuals) %&gt;% mean(),
+    #   rmse = mean(residuals^2)^0.5
+    # )
+    yardstick::metrics(truth = price, estimate = .pred)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[".metric"],"name":[1],"type":["chr"],"align":["left"]},{"label":[".estimator"],"name":[2],"type":["chr"],"align":["left"]},{"label":[".estimate"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"rmse","2":"standard","3":"1167.4757890"},{"1":"rsq","2":"standard","3":"0.7015673"},{"1":"mae","2":"standard","3":"828.9705569"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="tuning" class="section level1">
+<h1><span class="header-section-number">8</span> Tuning</h1>
+<pre class="r"><code>folds &lt;- vfold_cv(train_data, v = 10)
+rec_workflow_tuning &lt;-
+  rec_workflow %&gt;%
+  fit_resamples(folds)
+# library(tune)
+# fit_resamples()</code></pre>
+<pre class="r"><code>show_best(rec_workflow_tuning, metric = &quot;rmse&quot;)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[".metric"],"name":[1],"type":["chr"],"align":["left"]},{"label":[".estimator"],"name":[2],"type":["chr"],"align":["left"]},{"label":["mean"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["n"],"name":[4],"type":["int"],"align":["right"]},{"label":["std_err"],"name":[5],"type":["dbl"],"align":["right"]},{"label":[".config"],"name":[6],"type":["chr"],"align":["left"]}],"data":[{"1":"rmse","2":"standard","3":"1289.65","4":"10","5":"104.6795","6":"Preprocessor1_Model1"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>collect_metrics(rec_workflow_tuning)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[".metric"],"name":[1],"type":["chr"],"align":["left"]},{"label":[".estimator"],"name":[2],"type":["chr"],"align":["left"]},{"label":["mean"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["n"],"name":[4],"type":["int"],"align":["right"]},{"label":["std_err"],"name":[5],"type":["dbl"],"align":["right"]},{"label":[".config"],"name":[6],"type":["chr"],"align":["left"]}],"data":[{"1":"rmse","2":"standard","3":"1289.6498577","4":"10","5":"104.67945208","6":"Preprocessor1_Model1"},{"1":"rsq","2":"standard","3":"0.6873405","4":"10","5":"0.03751968","6":"Preprocessor1_Model1"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
 </div>
 
 

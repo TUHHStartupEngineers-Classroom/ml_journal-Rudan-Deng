@@ -1,6 +1,6 @@
 ---
 title: "02 Supervised ML"
-date: "2020-11-05"
+date: "2021-05-31"
 output:
   html_document:
     toc: true
@@ -16,39 +16,163 @@ output:
 knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=TRUE)
 ```
 
-**IMPORTANT:** You can delete everything in here and start fresh. You might want to start by not deleting anything above this line until you know what that stuff is doing.
-
-This is an `.Rmd` file. It is plain text with special features. Any time you write just like this, it will be compiled to normal text in the website. If you put a \# in front of your text, it will create a top level-header.
-
-# My first post
-
-Last compiled: `r Sys.Date()`
-
-Notice that whatever you define as a top level header, automatically gets put into the table of contents bar on the left. 
-
-## Second level header
-
-You can add more headers by adding more hashtags. These won't be put into the table of contents
-
-### third level header
-
-Here's an even lower level header
-
-# My second post (note the order)
-
-Last compiled: `r Sys.Date()`
-
-I'm writing this tutorial going from the top down. And, this is how it will be printed. So, notice the second post is second in the list. If you want your most recent post to be at the top, then make a new post starting at the top. If you want the oldest first, do, then keep adding to the bottom
-
-# Adding R stuff
-
-So far this is just a blog where you can write in plain text and serve your writing to a webpage. One of the main purposes of this lab journal is to record your progress learning R. The reason I am asking you to use this process is because you can both make a website, and a lab journal, and learn R all in R-studio. This makes everything really convenient and in the same place. 
-
-So, let's say you are learning how to make a histogram in R. For example, maybe you want to sample 100 numbers from a normal distribution with mean = 0, and standard deviation = 1, and then you want to plot a histogram. You can do this right here by using an r code block, like this:
-
+# Import libraries
 ```{r}
-samples <- rnorm(100, mean=0, sd=1)
-hist(samples)
+library(tidyverse)
+# Modeling
+library(parsnip)
+# Pre-processing & Sampling
+library(recipes)
+library(rsample)
+# Modeling Error Metrics
+library(yardstick)
+library(workflows)
+library(tune)
+
 ```
 
-When you knit this R Markdown document, you will see that the histogram is printed to the page, along with the R code. This document can be set up to hide the R code in the webpage, just delete the comment (hashtag) from the cold folding option in the yaml header up top. For purposes of letting yourself see the code, and me see the code, best to keep it the way that it is. You'll learn that all of these things and more can be customized in each R code block.
+# Read data
+```{r}
+bike_features_tbl <- readRDS("./01_ml_fund_source/Business\ Decisions\ with\ Machine\ Learning/bike_features_tbl.rds") %>% select(-c("Brake Rotor"))
+```
+
+```{r}
+glimpse(bike_features_tbl)
+```
+
+# Initial feature processing
+```{r}
+bike_features_tbl2 <- bike_features_tbl %>% 
+    select(model:url, `Rear Derailleur`, `Shift Lever`) %>% 
+    mutate(
+      `shimano dura-ace`        = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano dura-ace ") %>% as.numeric(),
+      `shimano ultegra`         = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano ultegra ") %>% as.numeric(),
+      `shimano 105`             = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano 105 ") %>% as.numeric(),
+      `shimano tiagra`          = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano tiagra ") %>% as.numeric(),
+      `Shimano sora`            = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano sora") %>% as.numeric(),
+      `shimano deore`           = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano deore(?! xt)") %>% as.numeric(),
+      `shimano slx`             = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano slx") %>% as.numeric(),
+      `shimano grx`             = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano grx") %>% as.numeric(),
+      `Shimano xt`              = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano deore xt |shimano xt ") %>% as.numeric(),
+      `Shimano xtr`             = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano xtr") %>% as.numeric(),
+      `Shimano saint`           = `Rear Derailleur` %>% str_to_lower() %>% str_detect("shimano saint") %>% as.numeric(),
+      `SRAM red`                = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram red") %>% as.numeric(),
+      `SRAM force`              = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram force") %>% as.numeric(),
+      `SRAM rival`              = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram rival") %>% as.numeric(),
+      `SRAM apex`               = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram apex") %>% as.numeric(),
+      `SRAM xx1`                = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram xx1") %>% as.numeric(),
+      `SRAM x01`                = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram x01|sram xo1") %>% as.numeric(),
+      `SRAM gx`                 = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram gx") %>% as.numeric(),
+      `SRAM nx`                 = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram nx") %>% as.numeric(),
+      `SRAM sx`                 = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram sx") %>% as.numeric(),
+      `SRAM sx`                 = `Rear Derailleur` %>% str_to_lower() %>% str_detect("sram sx") %>% as.numeric(),
+      `Campagnolo potenza`      = `Rear Derailleur` %>% str_to_lower() %>% str_detect("campagnolo potenza") %>% as.numeric(),
+      `Campagnolo super record` = `Rear Derailleur` %>% str_to_lower() %>% str_detect("campagnolo super record") %>% as.numeric(),
+      `shimano nexus`           = `Shift Lever`     %>% str_to_lower() %>% str_detect("shimano nexus") %>% as.numeric(),
+      `shimano alfine`          = `Shift Lever`     %>% str_to_lower() %>% str_detect("shimano alfine") %>% as.numeric()
+    ) %>% 
+  # Remove original columns  
+  select(-c(`Rear Derailleur`, `Shift Lever`)) %>% 
+  # Set all NAs to 0
+  mutate_if(is.numeric, ~replace(., is.na(.), 0))
+```
+
+```{r}
+bike_features_tbl %>% select(c("model"),"model_year","frame_material","weight","price","category_1","category_2",
+                             "category_3","gender","url")
+```
+
+
+# Build features using recipes
+
+```{r}
+data <- bike_features_tbl %>% select ("Rear Derailleur","model","model_year","frame_material","weight","price","category_1","category_2","category_3","gender") %>% 
+  rename("Rear_Derailleur"="Rear Derailleur") %>%
+  mutate(id = row_number())
+  
+set.seed(42)
+data_split <- initial_split(data, prop = 3/4)
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+
+#train_recipe <- recipe(c("price","model","model_year","frame_material","weight","price","category_1","category_2","category_3","gender") ~ ., data = train_data)  %>%
+train_recipe <- recipe(price ~ ., data = train_data)  %>%
+step_dummy(all_nominal(), -all_outcomes())
+
+```
+
+```{r}
+rec_data <- bake(prep(train_recipe),new_data = NULL) 
+
+
+glimpse(rec_data)
+summary(train_recipe)
+```
+
+# Build XGBOOST
+```{r}
+# 4.3 XGBOOST ----
+# 4.3.1 Model ----
+
+set.seed(42)
+model_boost_tree_xgboost <- boost_tree(
+    mode = "regression",
+    mtry = 30,
+    learn_rate = 0.1,
+    tree_depth = 10
+    ) %>%
+    set_engine("xgboost") 
+#%>% fit(price ~ ., data = train_tbl %>% select(-c(id:weight), -category_1, -c(category_3:gender)))
+
+#model_07_boost_tree_xgboost %>% calc_metrics(test_tbl)
+```
+
+```{r}
+summary(train_recipe)
+summary(rec_data)
+```
+
+# Using Workflow
+```{r}
+rec_workflow <- 
+  workflow() %>% 
+  add_model(model_boost_tree_xgboost) %>% 
+  add_recipe(train_recipe)
+rec_workflow
+```
+
+```{r}
+rec_fit <- 
+  rec_workflow %>% 
+  fit(data = train_data)
+```
+
+# Evaluation metrics
+```{r}
+rec_fit %>%
+    predict(new_data = test_data) %>%
+    bind_cols(test_data %>% select(price)) %>%
+    # Manual approach
+    # mutate(residuals = price - .pred) %>% 
+    # 
+    # summarize(
+    #   mae  = abs(residuals) %>% mean(),
+    #   rmse = mean(residuals^2)^0.5
+    # )
+    yardstick::metrics(truth = price, estimate = .pred)
+```
+
+# Tuning
+```{r}
+folds <- vfold_cv(train_data, v = 10)
+rec_workflow_tuning <-
+  rec_workflow %>%
+  fit_resamples(folds)
+# library(tune)
+# fit_resamples()
+```
+
+```{r}
+show_best(rec_workflow_tuning, metric = "rmse")
+collect_metrics(rec_workflow_tuning)
+```
