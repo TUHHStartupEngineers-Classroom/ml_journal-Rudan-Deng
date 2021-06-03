@@ -23,6 +23,7 @@ library(tidyverse)
 library(readxl)
 library(skimr)
 library(GGally)
+library(rsample)
 
 # Load Data data definitions
 employee_attrition_tbl <- read_csv("./01_ml_fund_source/Business\ Decisions\ with\ Machine\ Learning/datasets-1067-1925-WA_Fn-UseC_-HR-Employee-Attrition.csv")
@@ -447,7 +448,7 @@ employee_attrition_tbl %>%
     plot_ggpairs(Attrition)
 ```
 
-# Challenge
+# Challenge 1
 
 Use your learning from descriptive features and plot_ggpairs() to further investigate the features. Run the functions above according to the features needed. Answer the following questions. Most of the time, you will only need the images from diagonal.
 
@@ -533,3 +534,118 @@ c. It's difficult to deduce anything based on the visualization
 a. Those that are leaving have more years since last promotion than those that are staying
 b. Those that are leaving have fewer years since last promotion than those that are staying
 c. It's difficult to deduce anything based on the visualization
+
+
+# Challenge 2
+## Load the training & test dataset
+```{r}
+library(tidyverse)
+# Modeling
+library(parsnip)
+# Pre-processing & Sampling
+library(recipes)
+library(rsample)
+# Modeling Error Metrics
+library(yardstick)
+library(workflows)
+library(tune)
+
+product_data <- read_csv("./01_ml_fund_source/Business\ Decisions\ with\ Machine\ Learning/product_backorders.csv")
+product_data2 <- product_data %>% 
+  mutate(
+      product_backorder = went_on_backorder %>% str_to_lower() %>% str_detect("yes") %>% as.numeric()
+  ) %>% 
+  select(-c(went_on_backorder))
+glimpse(product_data)
+
+split_obj<- initial_split(product_data2, prop = 0.75)
+train_tbl<- training(split_obj)
+test_tbl<- testing(split_obj)
+```
+## Specifiy the response and predictor variables
+```{r}
+recipe_obj <- recipe(product_backorder ~., data = train_tbl) %>% 
+    step_zv(all_predictors()) %>% 
+    step_dummy(all_nominal(),-all_outcomes()) %>%
+    prep()
+```
+
+```{r}
+summary(recipe_obj)
+```
+```{r}
+glimpse(bake(recipe_obj,new_data = NULL))
+
+```
+## run AutoML specifying the stopping criterion
+```{r}
+Sys.setenv(JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-9.0.4.jdk/Contents/Home")
+
+library(h2o)
+h2o.init()
+```
+
+
+
+```{r}
+# Split data into a training and a validation data frame
+# Setting the seed is just for reproducability
+split_h2o <- h2o.splitFrame(as.h2o(train_tbl), ratios = c(0.75), seed = 42)
+train_h2o <- split_h2o[[1]]
+valid_h2o <- split_h2o[[2]]
+test_h2o  <- as.h2o(test_tbl)
+
+# Set the target and predictors
+y <- "product_backorder"
+x <- setdiff(names(train_h2o), y)
+```
+
+```{r}
+automl_models_h2o <- h2o.automl(
+  x = x,
+  y = y,
+  training_frame    = train_h2o,
+  validation_frame  = valid_h2o,
+  leaderboard_frame = test_h2o,
+  max_runtime_secs  = 120,
+  nfolds            = 5,
+  stopping_metric = "mae", stopping_rounds = 3,
+                        stopping_tolerance = 1e-2
+)
+
+## View the leaderboard
+#slotNames(automl_models_h2o)
+automl_models_h2o@leaderboard 
+
+
+extract_h2o_model_name_by_position <- function(h2o_leaderboard, n = 1, verbose = T) {
+    
+    model_name <- h2o_leaderboard %>%
+        as.tibble() %>%
+        slice_(n) %>%
+        pull(model_id)
+    
+    if (verbose) message(model_name)
+    
+    return(model_name)
+    
+}
+
+```
+
+## Predicting using Leader Model
+
+```{r}
+best_model <- automl_models_h2o@leaderboard %>% 
+  extract_h2o_model_name_by_position(1) %>% 
+  h2o.getModel()
+
+predictions <- h2o.predict(best_model, newdata = as.h2o(test_tbl))
+
+typeof(predictions)
+
+predictions_tbl <- predictions %>% as_tibble()
+
+glimpse(predictions_tbl)
+
+```
