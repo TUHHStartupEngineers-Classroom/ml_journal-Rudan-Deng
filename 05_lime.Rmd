@@ -16,39 +16,217 @@ output:
 knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=TRUE)
 ```
 
-**IMPORTANT:** You can delete everything in here and start fresh. You might want to start by not deleting anything above this line until you know what that stuff is doing.
-
-This is an `.Rmd` file. It is plain text with special features. Any time you write just like this, it will be compiled to normal text in the website. If you put a \# in front of your text, it will create a top level-header.
-
-# My first post
-
-Last compiled: `r Sys.Date()`
-
-Notice that whatever you define as a top level header, automatically gets put into the table of contents bar on the left. 
-
-## Second level header
-
-You can add more headers by adding more hashtags. These won't be put into the table of contents
-
-### third level header
-
-Here's an even lower level header
-
-# My second post (note the order)
-
-Last compiled: `r Sys.Date()`
-
-I'm writing this tutorial going from the top down. And, this is how it will be printed. So, notice the second post is second in the list. If you want your most recent post to be at the top, then make a new post starting at the top. If you want the oldest first, do, then keep adding to the bottom
-
-# Adding R stuff
-
-So far this is just a blog where you can write in plain text and serve your writing to a webpage. One of the main purposes of this lab journal is to record your progress learning R. The reason I am asking you to use this process is because you can both make a website, and a lab journal, and learn R all in R-studio. This makes everything really convenient and in the same place. 
-
-So, let's say you are learning how to make a histogram in R. For example, maybe you want to sample 100 numbers from a normal distribution with mean = 0, and standard deviation = 1, and then you want to plot a histogram. You can do this right here by using an r code block, like this:
-
+# Load model
 ```{r}
-samples <- rnorm(100, mean=0, sd=1)
-hist(samples)
+# LIME FEATURE EXPLANATION ----
+
+# 1. Setup ----
+
+# Load Libraries 
+
+library(h2o)
+library(recipes)
+library(readxl)
+library(tidyverse)
+library(tidyquant)
+library(lime)
+library(rsample)
+
+product_data <- read_csv("./01_ml_fund_source/Business\ Decisions\ with\ Machine\ Learning/product_backorders.csv")
+product_data2 <- product_data %>% 
+  mutate(
+      product_backorder = went_on_backorder %>% str_to_lower() %>% str_detect("yes") %>% as.numeric()
+  ) %>% 
+  select(-c(went_on_backorder))
+glimpse(product_data)
+
+split_obj<- initial_split(product_data2, prop = 0.75)
+train_tbl<- training(split_obj)
+test_tbl<- testing(split_obj)
+
+
+# ML Preprocessing Recipe 
+recipe_obj <- recipe(product_backorder ~., data = train_tbl) %>% 
+    step_zv(all_predictors()) %>% 
+    step_dummy(all_nominal(),-all_outcomes()) %>%
+    prep()
+
+
+split_obj<- initial_split(product_data2, prop = 0.75)
+train_tbl<- training(split_obj)
+test_tbl<- testing(split_obj)
+
 ```
 
-When you knit this R Markdown document, you will see that the histogram is printed to the page, along with the R code. This document can be set up to hide the R code in the webpage, just delete the comment (hashtag) from the cold folding option in the yaml header up top. For purposes of letting yourself see the code, and me see the code, best to keep it the way that it is. You'll learn that all of these things and more can be customized in each R code block.
+```{r}
+# 2. Models ----
+
+h2o.init()
+
+automl_leader <- h2o.loadModel("StackedEnsemble_AllModels_AutoML_20210603_202714/StackedEnsemble_AllModels_AutoML_20210603_210724")
+automl_leader
+```
+
+
+# Plot
+```{r}
+# 3.1 Making Predictions ----
+
+predictions_tbl <- automl_leader %>% 
+    h2o.predict(newdata = as.h2o(test_tbl)) %>%
+    as.tibble() %>%
+    bind_cols(
+        test_tbl %>%
+            select(everything())
+    )
+
+predictions_tbl
+```
+
+```{r}
+summary(train_tbl)
+```
+
+
+# Part 1: Recreate plot_features(). Take the explanation data and use the first case to create a plot similar to the output of plot_features().
+
+## Original plot_features()
+```{r}
+# explanation %>% 
+#   as.tibble()
+#   
+# case_1 <- explanation %>%
+#     filter(case == 1)
+# 
+# case_1 %>%
+#     plot_features()
+# You will need at least the layers geom_col() and coord_flip().
+
+explainer <- train_tbl %>%
+    select(-product_backorder) %>%
+    lime(
+        model           = automl_leader,
+        bin_continuous  = TRUE,
+        n_bins          = 4,
+        quantile_bins   = TRUE
+    )
+
+explainer
+
+
+explanation <- test_tbl %>%
+    slice(1) %>%
+    select(-product_backorder) %>%
+    lime::explain(
+    
+        # Pass our explainer object
+        explainer = explainer,
+        # Because it is a binary classification model: 1
+        n_labels   = 1,
+        # number of features to be returned
+        n_features = 8,
+        # number of localized linear models
+        n_permutations = 5000,
+        # Let's start with 1
+        kernel_width   = 1
+    )
+
+explanation
+```
+
+```{r}
+
+g <- plot_features(explanation = explanation, ncol = 1, cases = 1)
+g
+```
+
+
+## Bonus Objectives:
+Get your custom plot_features() function to scale to multiple cases
+Use theme arguments to modify the look of the plot
+
+```{r}
+explanation_multi <- test_tbl %>%
+    slice(1:20) %>%
+    select(-product_backorder) %>%
+    lime::explain(
+        explainer = explainer,
+        n_labels   = 1,
+        n_features = 8,
+        n_permutations = 5000,
+        kernel_width   = 0.5
+    )
+
+explanation_multi %>%
+    as.tibble()
+
+plot_explanations(explanation_multi)
+
+```
+
+# Part 2: Recreate plot_explanations():
+
+Take the full explanation data and recreate the second plot.
+You will need at least the layers geom_tile() and facet_wrap().
+
+## Customized plot_features()
+```{r}
+theme_lime <- function(...) {
+  theme_minimal() +
+    theme(
+      strip.text = element_text(face = 'bold', size = 9),
+      plot.margin = margin(15, 15, 15, 15),
+      legend.background = element_blank(),
+      legend.key = element_blank(),
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      axis.ticks = element_blank(),
+      legend.position = 'bottom',
+      panel.spacing.y = unit(15, 'pt'),
+      strip.text.x = element_text(margin = margin(t = 2, b = 2), hjust = 0),
+      axis.title.y = element_text(margin = margin(r = 10)),
+      axis.title.x = element_text(margin = margin(t = 10)),
+      panel.background = element_rect(fill   = "transparent"),
+      panel.border     = element_rect(color = "black", fill = NA, size = 0.5),
+      panel.grid.major = element_line(color = "grey", size = 0.333),
+      ...
+    )
+}
+
+plot_explanations_customized <- function(explanation, ...) {
+
+  num_cases <- unique(suppressWarnings(as.numeric(explanation$case)))
+  if (!anyNA(num_cases)) {
+    explanation$case <- factor(explanation$case, levels = as.character(sort(num_cases)))
+  }
+  explanation$feature_desc <- factor(
+    explanation$feature_desc,
+    levels = rev(unique(explanation$feature_desc[order(explanation$feature, explanation$feature_value)]))
+  )
+  
+p <- ggplot(explanation, aes_(~case, ~feature_desc),show.legend=TRUE) +
+    geom_tile(aes_(fill = ~feature_weight)) +
+    scale_x_discrete('Case', expand = c(0, 0)) +
+    scale_y_discrete('Feature', expand = c(0, 0)) +
+    scale_fill_gradient2('Feature\nweight', low = 'firebrick', mid = '#f7f7f7', high = 'steelblue') +
+    theme_lime() +
+    theme(panel.border = element_rect(fill = NA, colour = 'grey60', size = 1),
+          panel.grid = element_blank(),
+          legend.position = 'right',
+          axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+  if (is.null(explanation$label)) {
+    p
+  } else {
+    p + facet_wrap(~label, ...)
+  }
+}
+
+```
+
+```{r}
+plot_explanations_customized(explanation = explanation, ncol = 1, cases = 1)
+```
+
+```{r}
+plot_explanations_customized(explanation_multi)
+```
