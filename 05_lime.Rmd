@@ -87,8 +87,7 @@ predictions_tbl
 summary(train_tbl)
 ```
 
-
-# Part 1: Recreate plot_features(). Take the explanation data and use the first case to create a plot similar to the output of plot_features().
+Take the explanation data and use the first case to create a plot similar to the output of plot_features().
 
 ## Original plot_features()
 ```{r}
