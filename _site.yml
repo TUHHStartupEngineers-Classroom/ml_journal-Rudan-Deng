@@ -25,5 +25,5 @@ navbar:
       href: 07_class_notes.html
     - text: "Links"
       href: 08_links.html
-output_dir: "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
+output_dir: "ad1e7f59c168cc61b6cd5fdb478a04ed6d44d7ed"
 exclude: ["raw_data", "challenges", "docks.jpg"]

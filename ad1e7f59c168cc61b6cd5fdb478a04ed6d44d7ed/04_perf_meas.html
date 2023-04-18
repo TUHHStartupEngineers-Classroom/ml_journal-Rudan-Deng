@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+<meta name="date" content="2020-06-03" />
+
+<title>04 Performance Measures</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
+<link href="site_libs/anchor-sections-1.0/anchor-sections.css" rel="stylesheet" />
+<script src="site_libs/anchor-sections-1.0/anchor-sections.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">MyLabJournal</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Index</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Journal
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="01_ml_fund.html">01 Machine Learning Fundamentals</a>
+    </li>
+    <li>
+      <a href="02_ml_sup.html">02 Supervised ML</a>
+    </li>
+    <li>
+      <a href="03_ml_aut.html">03 Automated Machine Learning with H20</a>
+    </li>
+    <li>
+      <a href="04_perf_meas.html">04 Performance Measures</a>
+    </li>
+    <li>
+      <a href="05_lime.html">05 LIME</a>
+    </li>
+    <li>
+      <a href="06_dl.html">06 Deep Learning</a>
+    </li>
+  </ul>
+</li>
+<li>
+  <a href="07_class_notes.html">Class notes</a>
+</li>
+<li>
+  <a href="08_links.html">Links</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">04 Performance Measures</h1>
+<h4 class="date">2020-06-03</h4>
+
+</div>
+
+
+<div id="load-the-training-test-dataset" class="section level2">
+<h2><span class="header-section-number">0.1</span> Load the training &amp; test dataset</h2>
+<pre class="r"><code>library(tidyverse)
+# Modeling
+library(parsnip)
+# Pre-processing &amp; Sampling
+library(recipes)
+library(rsample)
+# Modeling Error Metrics
+library(yardstick)
+library(workflows)
+library(tune)
+
+product_data &lt;- read_csv(&quot;./01_ml_fund_source/Business\ Decisions\ with\ Machine\ Learning/product_backorders.csv&quot;)
+product_data2 &lt;- product_data %&gt;% 
+  mutate(
+      product_backorder = went_on_backorder %&gt;% str_to_lower() %&gt;% str_detect(&quot;yes&quot;) %&gt;% as.numeric()
+  ) %&gt;% 
+  mutate(product_backorder = as.factor(product_backorder)) %&gt;%
+  select(-c(went_on_backorder))
+glimpse(product_data)</code></pre>
+<pre><code>## Rows: 19,053
+## Columns: 23
+## $ sku               &lt;dbl&gt; 1113121, 1113268, 1113874, 1114222, 1114823, 1115453…
+## $ national_inv      &lt;dbl&gt; 0, 0, 20, 0, 0, 55, -34, 4, 2, -7, 1, 2, 0, 0, 0, 0,…
+## $ lead_time         &lt;dbl&gt; 8, 8, 2, 8, 12, 8, 8, 9, 8, 8, 8, 8, 12, 2, 12, 4, 2…
+## $ in_transit_qty    &lt;dbl&gt; 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0…
+## $ forecast_3_month  &lt;dbl&gt; 6, 2, 45, 9, 31, 216, 120, 43, 4, 56, 2, 5, 5, 54, 4…
+## $ forecast_6_month  &lt;dbl&gt; 6, 3, 99, 14, 31, 360, 240, 67, 6, 96, 4, 9, 6, 72, …
+## $ forecast_9_month  &lt;dbl&gt; 6, 4, 153, 21, 31, 492, 240, 115, 9, 112, 6, 13, 9, …
+## $ sales_1_month     &lt;dbl&gt; 0, 1, 16, 5, 7, 30, 83, 5, 1, 13, 0, 1, 0, 0, 1, 0, …
+## $ sales_3_month     &lt;dbl&gt; 4, 2, 42, 17, 15, 108, 122, 22, 5, 30, 2, 5, 4, 0, 3…
+## $ sales_6_month     &lt;dbl&gt; 9, 3, 80, 36, 33, 275, 144, 40, 6, 56, 3, 8, 5, 0, 4…
+## $ sales_9_month     &lt;dbl&gt; 12, 3, 111, 43, 47, 340, 165, 58, 9, 76, 4, 11, 6, 0…
+## $ min_bank          &lt;dbl&gt; 0, 0, 10, 0, 2, 51, 33, 4, 2, 0, 0, 0, 3, 4, 0, 0, 0…
+## $ potential_issue   &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;…
+## $ pieces_past_due   &lt;dbl&gt; 1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
+## $ perf_6_month_avg  &lt;dbl&gt; 0.90, 0.96, 0.81, 0.96, 0.98, 0.00, 1.00, 0.69, 1.00…
+## $ perf_12_month_avg &lt;dbl&gt; 0.89, 0.97, 0.88, 0.98, 0.98, 0.00, 0.97, 0.68, 0.95…
+## $ local_bo_qty      &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 34, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, …
+## $ deck_risk         &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;…
+## $ oe_constraint     &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;…
+## $ ppap_risk         &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No…
+## $ stop_auto_buy     &lt;chr&gt; &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Ye…
+## $ rev_stop          &lt;chr&gt; &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;No&quot;…
+## $ went_on_backorder &lt;chr&gt; &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Ye…</code></pre>
+<pre class="r"><code>split_obj&lt;- initial_split(product_data2, prop = 0.75)
+train_tbl&lt;- training(split_obj)
+test_tbl&lt;- testing(split_obj)</code></pre>
+</div>
+<div id="specifiy-the-response-and-predictor-variables" class="section level2">
+<h2><span class="header-section-number">0.2</span> Specifiy the response and predictor variables</h2>
+<pre class="r"><code>recipe_obj &lt;- recipe(product_backorder ~., data = train_tbl) %&gt;% 
+    step_zv(all_predictors()) %&gt;% 
+    step_dummy(all_nominal(),-all_outcomes()) %&gt;%
+    prep()</code></pre>
+<pre class="r"><code>summary(recipe_obj)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["variable"],"name":[1],"type":["chr"],"align":["left"]},{"label":["type"],"name":[2],"type":["chr"],"align":["left"]},{"label":["role"],"name":[3],"type":["chr"],"align":["left"]},{"label":["source"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"sku","2":"numeric","3":"predictor","4":"original"},{"1":"national_inv","2":"numeric","3":"predictor","4":"original"},{"1":"lead_time","2":"numeric","3":"predictor","4":"original"},{"1":"in_transit_qty","2":"numeric","3":"predictor","4":"original"},{"1":"forecast_3_month","2":"numeric","3":"predictor","4":"original"},{"1":"forecast_6_month","2":"numeric","3":"predictor","4":"original"},{"1":"forecast_9_month","2":"numeric","3":"predictor","4":"original"},{"1":"sales_1_month","2":"numeric","3":"predictor","4":"original"},{"1":"sales_3_month","2":"numeric","3":"predictor","4":"original"},{"1":"sales_6_month","2":"numeric","3":"predictor","4":"original"},{"1":"sales_9_month","2":"numeric","3":"predictor","4":"original"},{"1":"min_bank","2":"numeric","3":"predictor","4":"original"},{"1":"pieces_past_due","2":"numeric","3":"predictor","4":"original"},{"1":"perf_6_month_avg","2":"numeric","3":"predictor","4":"original"},{"1":"perf_12_month_avg","2":"numeric","3":"predictor","4":"original"},{"1":"local_bo_qty","2":"numeric","3":"predictor","4":"original"},{"1":"product_backorder","2":"nominal","3":"outcome","4":"original"},{"1":"potential_issue_Yes","2":"numeric","3":"predictor","4":"derived"},{"1":"deck_risk_Yes","2":"numeric","3":"predictor","4":"derived"},{"1":"oe_constraint_Yes","2":"numeric","3":"predictor","4":"derived"},{"1":"ppap_risk_Yes","2":"numeric","3":"predictor","4":"derived"},{"1":"stop_auto_buy_Yes","2":"numeric","3":"predictor","4":"derived"},{"1":"rev_stop_Yes","2":"numeric","3":"predictor","4":"derived"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="run-automl-specifying-the-stopping-criterion" class="section level2">
+<h2><span class="header-section-number">0.3</span> run AutoML specifying the stopping criterion</h2>
+<pre class="r"><code>Sys.setenv(JAVA_HOME=&quot;/Library/Java/JavaVirtualMachines/jdk-9.0.4.jdk/Contents/Home&quot;)
+Sys.setenv(https_proxy=&quot;&quot;) 
+Sys.setenv(http_proxy=&quot;&quot;) 
+Sys.setenv(http_proxy_user=&quot;&quot;) 
+Sys.setenv(https_proxy_user=&quot;&quot;)
+library(h2o)
+h2o.init()</code></pre>
+<pre><code>##  Connection successful!
+## 
+## R is connected to the H2O cluster: 
+##     H2O cluster uptime:         22 minutes 52 seconds 
+##     H2O cluster timezone:       Asia/Shanghai 
+##     H2O data parsing timezone:  UTC 
+##     H2O cluster version:        3.32.1.3 
+##     H2O cluster version age:    15 days  
+##     H2O cluster name:           H2O_started_from_R_aeoles_vdz944 
+##     H2O cluster total nodes:    1 
+##     H2O cluster total memory:   1.86 GB 
+##     H2O cluster total cores:    4 
+##     H2O cluster allowed cores:  4 
+##     H2O cluster healthy:        TRUE 
+##     H2O Connection ip:          localhost 
+##     H2O Connection port:        54321 
+##     H2O Connection proxy:       NA 
+##     H2O Internal Security:      FALSE 
+##     H2O API Extensions:         Amazon S3, XGBoost, Algos, AutoML, Core V3, TargetEncoder, Core V4 
+##     R Version:                  R version 4.0.3 (2020-10-10)</code></pre>
+<pre class="r"><code># Split data into a training and a validation data frame
+# Setting the seed is just for reproducability
+split_h2o &lt;- h2o.splitFrame(as.h2o(train_tbl), ratios = c(0.75), seed = 42)</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+<pre class="r"><code>train_h2o &lt;- split_h2o[[1]]
+valid_h2o &lt;- split_h2o[[2]]
+test_h2o  &lt;- as.h2o(test_tbl)</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+<pre class="r"><code># Set the target and predictors
+y &lt;- &quot;product_backorder&quot;
+x &lt;- setdiff(names(train_h2o), y)</code></pre>
+<pre class="r"><code>automl_models_h2o &lt;- h2o.automl(
+  x = x,
+  y = y,
+  training_frame    = train_h2o,
+  validation_frame  = valid_h2o,
+  leaderboard_frame = test_h2o,
+  max_runtime_secs  = 120,
+  nfolds            = 5,
+  stopping_metric = &quot;auc&quot;, stopping_rounds = 3,
+                        stopping_tolerance = 1e-2
+)</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+## 09:22:18.183: User specified a validation frame with cross-validation still enabled. Please note that the models will still be validated using cross-validation only, the validation frame will be used to provide purely informative validation metrics on the trained models.
+  |                                                                            
+  |=                                                                     |   2%
+  |                                                                            
+  |==                                                                    |   3%
+  |                                                                            
+  |===                                                                   |   4%
+  |                                                                            
+  |====                                                                  |   5%
+  |                                                                            
+  |=====                                                                 |   7%
+  |                                                                            
+  |======                                                                |   8%
+  |                                                                            
+  |======                                                                |   9%
+  |                                                                            
+  |========                                                              |  11%
+  |                                                                            
+  |========                                                              |  12%
+  |                                                                            
+  |=========                                                             |  13%
+  |                                                                            
+  |==========                                                            |  14%
+  |                                                                            
+  |===========                                                           |  15%
+  |                                                                            
+  |============                                                          |  17%
+  |                                                                            
+  |============                                                          |  18%
+  |                                                                            
+  |=============                                                         |  19%
+  |                                                                            
+  |==============                                                        |  20%
+  |                                                                            
+  |===============                                                       |  21%
+  |                                                                            
+  |================                                                      |  22%
+  |                                                                            
+  |=================                                                     |  24%
+  |                                                                            
+  |=================                                                     |  25%
+  |                                                                            
+  |==================                                                    |  26%
+  |                                                                            
+  |===================                                                   |  27%
+  |                                                                            
+  |====================                                                  |  29%
+  |                                                                            
+  |=====================                                                 |  30%
+  |                                                                            
+  |======================                                                |  32%
+  |                                                                            
+  |=======================                                               |  33%
+  |                                                                            
+  |========================                                              |  34%
+  |                                                                            
+  |=========================                                             |  35%
+  |                                                                            
+  |=========================                                             |  36%
+  |                                                                            
+  |==========================                                            |  38%
+  |                                                                            
+  |===========================                                           |  39%
+  |                                                                            
+  |============================                                          |  40%
+  |                                                                            
+  |=============================                                         |  41%
+  |                                                                            
+  |==============================                                        |  42%
+  |                                                                            
+  |===============================                                       |  44%
+  |                                                                            
+  |================================                                      |  45%
+  |                                                                            
+  |================================                                      |  46%
+  |                                                                            
+  |=================================                                     |  48%
+  |                                                                            
+  |==================================                                    |  49%
+  |                                                                            
+  |===================================                                   |  50%
+  |                                                                            
+  |====================================                                  |  51%
+  |                                                                            
+  |=====================================                                 |  53%
+  |                                                                            
+  |==========================================                            |  59%
+  |                                                                            
+  |===========================================                           |  61%
+  |                                                                            
+  |===========================================                           |  62%
+  |                                                                            
+  |============================================                          |  63%
+  |                                                                            
+  |=============================================                         |  64%
+  |                                                                            
+  |==============================================                        |  65%
+  |                                                                            
+  |==============================================                        |  66%
+  |                                                                            
+  |===============================================                       |  68%
+  |                                                                            
+  |================================================                      |  68%
+  |                                                                            
+  |=================================================                     |  70%
+  |                                                                            
+  |=================================================                     |  71%
+  |                                                                            
+  |===================================================                   |  72%
+  |                                                                            
+  |===================================================                   |  73%
+  |                                                                            
+  |===================================================                   |  74%
+  |                                                                            
+  |======================================================                |  77%
+  |                                                                            
+  |======================================================                |  78%
+  |                                                                            
+  |=======================================================               |  79%
+  |                                                                            
+  |========================================================              |  81%
+  |                                                                            
+  |==========================================================            |  83%
+  |                                                                            
+  |===========================================================           |  85%
+  |                                                                            
+  |============================================================          |  86%
+  |                                                                            
+  |=============================================================         |  86%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+</div>
+<div id="leaderboard-visualization" class="section level1">
+<h1><span class="header-section-number">1</span> Leaderboard visualization</h1>
+<pre class="r"><code>#slotNames(automl_models_h2o)
+automl_models_h2o@leaderboard </code></pre>
+<pre><code>##                                              model_id       auc   logloss
+## 1    StackedEnsemble_AllModels_AutoML_20210604_092218 0.9584213 0.1614091
+## 2 StackedEnsemble_BestOfFamily_AutoML_20210604_092218 0.9575403 0.1622765
+## 3      XGBoost_grid__1_AutoML_20210604_092218_model_6 0.9553447 0.1661924
+## 4                    XGBoost_3_AutoML_20210604_092218 0.9548736 0.1658676
+## 5      XGBoost_grid__1_AutoML_20210604_092218_model_7 0.9535522 0.1681505
+## 6      XGBoost_grid__1_AutoML_20210604_092218_model_3 0.9532594 0.1682619
+##       aucpr mean_per_class_error      rmse        mse
+## 1 0.7617701            0.1365495 0.2190991 0.04800440
+## 2 0.7622086            0.1379719 0.2197378 0.04828472
+## 3 0.7538270            0.1510114 0.2223290 0.04943018
+## 4 0.7540062            0.1526773 0.2225789 0.04954139
+## 5 0.7471683            0.1460980 0.2232424 0.04983715
+## 6 0.7444691            0.1283209 0.2235859 0.04999066
+## 
+## [30 rows x 7 columns]</code></pre>
+<pre class="r"><code>summary(automl_models_h2o@leaderboard %&gt;% 
+              as_tibble() )</code></pre>
+<pre><code>##    model_id              auc            logloss           aucpr       
+##  Length:30          Min.   :0.7178   Min.   :0.1614   Min.   :0.2575  
+##  Class :character   1st Qu.:0.9396   1st Qu.:0.1699   1st Qu.:0.6953  
+##  Mode  :character   Median :0.9506   Median :0.1825   Median :0.7262  
+##                     Mean   :0.9202   Mean   :0.2047   Mean   :0.6667  
+##                     3rd Qu.:0.9522   3rd Qu.:0.2021   3rd Qu.:0.7443  
+##                     Max.   :0.9584   Max.   :0.3628   Max.   :0.7622  
+##  mean_per_class_error      rmse             mse         
+##  Min.   :0.1283       Min.   :0.2191   Min.   :0.04800  
+##  1st Qu.:0.1464       1st Qu.:0.2240   1st Qu.:0.05018  
+##  Median :0.1588       Median :0.2296   Median :0.05270  
+##  Mean   :0.1804       Mean   :0.2422   Mean   :0.05952  
+##  3rd Qu.:0.1726       3rd Qu.:0.2431   3rd Qu.:0.05912  
+##  Max.   :0.3581       Max.   :0.3160   Max.   :0.09985</code></pre>
+<pre class="r"><code>data_transformed_tbl &lt;- automl_models_h2o@leaderboard %&gt;%
+        as_tibble() %&gt;%
+        select(-c(rmse, mse)) %&gt;% 
+        mutate(model_type = str_extract(model_id, &quot;[^_]+&quot;)) %&gt;%
+        slice(1:15) %&gt;% 
+        rownames_to_column(var = &quot;rowname&quot;) %&gt;%
+        # Visually this step will not change anything
+        # It reorders the factors under the hood
+        mutate(
+          model_id   = as_factor(model_id) %&gt;% reorder(auc),
+          model_type = as.factor(model_type)
+          ) %&gt;% 
+          pivot_longer(cols = -c(model_id, model_type, rowname), 
+                       names_to = &quot;key&quot;, 
+                       values_to = &quot;value&quot;, 
+                       names_transform = list(key = forcats::fct_inorder)
+                       ) %&gt;% 
+        mutate(model_id = paste0(rowname, &quot;. &quot;, model_id) %&gt;% as_factor() %&gt;% fct_rev())
+
+
+data_transformed_tbl %&gt;%
+        ggplot(aes(value, model_id, color = model_type)) +
+        geom_point(size = 3) +
+        geom_label(aes(label = round(value, 2), hjust = &quot;inward&quot;)) +
+        
+        # Facet to break out logloss and auc
+        facet_wrap(~ key, scales = &quot;free_x&quot;) +
+        labs(title = &quot;Leaderboard Metrics&quot;,
+             subtitle = paste0(&quot;Ordered by: &quot;, &quot;auc&quot;),
+             y = &quot;Model Postion, Model ID&quot;, x = &quot;&quot;) + 
+        theme(legend.position = &quot;bottom&quot;)</code></pre>
+<p><img src="04_perf_meas_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+</div>
+<div id="tune-a-model-with-grid-search" class="section level1">
+<h1><span class="header-section-number">2</span> Tune a model with grid search</h1>
+<pre class="r"><code>deeplearning_grid_01 &lt;- h2o.grid(
+
+    # See help page for available algos
+    algorithm = &quot;deeplearning&quot;,
+    
+    # I just use the same as the object
+    grid_id = &quot;deeplearning_grid_01&quot;,
+    
+    # The following is for ?h2o.deeplearning()
+    # predictor and response variables
+    x = x,
+    y = y,
+    
+    # training and validation frame and crossfold validation
+    training_frame   = train_h2o,
+    validation_frame = valid_h2o,
+    nfolds = 5,
+    # Hyperparamters: Use deeplearning_h2o@allparameters to see all
+    hyper_params = list(
+        # Use some combinations (the first one was the original)
+        hidden = list(c(10, 10, 10), c(20, 15, 10), c(20, 20, 20)),
+        epochs = c(10, 15, 20)
+    )
+)</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+<pre class="r"><code>h2o.getGrid(grid_id = &quot;deeplearning_grid_01&quot;, sort_by = &quot;auc&quot;, decreasing = TRUE)</code></pre>
+<pre><code>## H2O Grid Details
+## ================
+## 
+## Grid ID: deeplearning_grid_01 
+## Used hyper parameters: 
+##   -  epochs 
+##   -  hidden 
+## Number of models: 36 
+## Number of failed models: 0 
+## 
+## Hyper-Parameter Search Summary: ordered by decreasing auc
+##               epochs       hidden                     model_ids
+## 1 20.803810882039038 [20, 20, 20] deeplearning_grid_01_model_36
+## 2 20.801883263070017 [20, 20, 20]  deeplearning_grid_01_model_9
+## 3 20.797317046090246 [10, 10, 10] deeplearning_grid_01_model_12
+## 4 20.789991100891008 [20, 15, 10]  deeplearning_grid_01_model_6
+## 5 20.807347099440168 [20, 15, 10] deeplearning_grid_01_model_33
+##                  auc
+## 1 0.8332301971638082
+## 2  0.828551018151556
+## 3 0.8236115956236738
+## 4 0.8228106187391765
+## 5  0.818819409421544
+## 
+## ---
+##                epochs       hidden                     model_ids
+## 31 10.402913756525084 [20, 15, 10] deeplearning_grid_01_model_13
+## 32   15.6092084697866 [10, 10, 10] deeplearning_grid_01_model_20
+## 33 15.621110110960961 [20, 15, 10] deeplearning_grid_01_model_23
+## 34 10.399954694545338 [20, 15, 10] deeplearning_grid_01_model_22
+## 35  10.41832126003871 [20, 20, 20] deeplearning_grid_01_model_25
+## 36 10.407354664524046 [10, 10, 10] deeplearning_grid_01_model_19
+##                   auc
+## 31  0.776202796260628
+## 32 0.7756002367774982
+## 33 0.7736808259278011
+## 34  0.762725585022493
+## 35 0.7580645684256209
+## 36 0.7548219305181088</code></pre>
+<pre class="r"><code>deeplearning_grid_01_model_1 &lt;- h2o.getModel(&quot;deeplearning_grid_01_model_8&quot;)
+
+deeplearning_grid_01_model_1 %&gt;% h2o.auc(train = T, valid = T, xval = T)</code></pre>
+<pre><code>##     train     valid      xval 
+## 0.8472765 0.8496180 0.8061580</code></pre>
+<pre class="r"><code>performance_h2o &lt;-deeplearning_grid_01_model_1 %&gt;%
+    h2o.performance(newdata = as.h2o(test_tbl))</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+<pre class="r"><code>performance_h2o</code></pre>
+<pre><code>## H2OBinomialMetrics: deeplearning
+## 
+## MSE:  0.08222105
+## RMSE:  0.2867421
+## LogLoss:  0.2850838
+## Mean Per-Class Error:  0.2813166
+## AUC:  0.8528961
+## AUCPR:  0.4673712
+## Gini:  0.7057921
+## 
+## Confusion Matrix (vertical: actual; across: predicted) for F1-optimal threshold:
+##           0   1    Error       Rate
+## 0      3879 323 0.076868  =323/4202
+## 1       273 289 0.485765   =273/562
+## Totals 4152 612 0.125105  =596/4764
+## 
+## Maximum Metrics: Maximum metrics at their respective thresholds
+##                         metric threshold       value idx
+## 1                       max f1  0.201648    0.492334 186
+## 2                       max f2  0.148001    0.607164 232
+## 3                 max f0point5  0.251664    0.504739 154
+## 4                 max accuracy  0.371472    0.894836 108
+## 5                max precision  0.981001    0.800000   4
+## 6                   max recall  0.000044    1.000000 399
+## 7              max specificity  0.998456    0.999762   0
+## 8             max absolute_mcc  0.156915    0.423243 223
+## 9   max min_per_class_accuracy  0.135164    0.775801 245
+## 10 max mean_per_class_accuracy  0.148001    0.779492 232
+## 11                     max tns  0.998456 4201.000000   0
+## 12                     max fns  0.998456  559.000000   0
+## 13                     max fps  0.000044 4202.000000 399
+## 14                     max tps  0.000044  562.000000 399
+## 15                     max tnr  0.998456    0.999762   0
+## 16                     max fnr  0.998456    0.994662   0
+## 17                     max fpr  0.000044    1.000000 399
+## 18                     max tpr  0.000044    1.000000 399
+## 
+## Gains/Lift Table: Extract with `h2o.gainsLift(&lt;model&gt;, &lt;data&gt;)` or `h2o.gainsLift(&lt;model&gt;, valid=&lt;T/F&gt;, xval=&lt;T/F&gt;)`</code></pre>
+</div>
+<div id="visualize-the-trade-of-between-the-precision-and-the-recall-and-the-optimal-threshold" class="section level1">
+<h1><span class="header-section-number">3</span> Visualize the trade of between the precision and the recall and the optimal threshold</h1>
+<pre class="r"><code>h2o.confusionMatrix(performance_h2o)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["0"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["1"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["Error"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["Rate"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"3879","2":"323","3":"0.07686816","4":"=323/4202","_rn_":"0"},{"1":"273","2":"289","3":"0.48576512","4":"=273/562","_rn_":"1"},{"1":"4152","2":"612","3":"0.12510495","4":"=596/4764","_rn_":"Totals"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>performance_tbl &lt;- performance_h2o %&gt;%
+    h2o.metric() %&gt;%
+    as.tibble()
+
+
+theme_new &lt;- theme(
+      legend.position  = &quot;bottom&quot;,
+      legend.key       = element_blank(),,
+      panel.background = element_rect(fill   = &quot;transparent&quot;),
+      panel.border     = element_rect(color = &quot;black&quot;, fill = NA, size = 0.5),
+      panel.grid.major = element_line(color = &quot;grey&quot;, size = 0.333)
+      ) 
+
+
+performance_tbl %&gt;%
+    filter(f1 == max(f1))</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["threshold"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["f1"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["f2"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["f0point5"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["accuracy"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["precision"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["recall"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["specificity"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["absolute_mcc"],"name":[9],"type":["dbl"],"align":["right"]},{"label":["min_per_class_accuracy"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["mean_per_class_accuracy"],"name":[11],"type":["dbl"],"align":["right"]},{"label":["tns"],"name":[12],"type":["dbl"],"align":["right"]},{"label":["fns"],"name":[13],"type":["dbl"],"align":["right"]},{"label":["fps"],"name":[14],"type":["dbl"],"align":["right"]},{"label":["tps"],"name":[15],"type":["dbl"],"align":["right"]},{"label":["tnr"],"name":[16],"type":["dbl"],"align":["right"]},{"label":["fnr"],"name":[17],"type":["dbl"],"align":["right"]},{"label":["fpr"],"name":[18],"type":["dbl"],"align":["right"]},{"label":["tpr"],"name":[19],"type":["dbl"],"align":["right"]},{"label":["idx"],"name":[20],"type":["int"],"align":["right"]}],"data":[{"1":"0.2016485","2":"0.4923339","3":"0.5052448","4":"0.4800664","5":"0.874895","6":"0.4722222","7":"0.5142349","8":"0.9231318","9":"0.4216358","10":"0.5142349","11":"0.7186834","12":"3879","13":"273","14":"323","15":"289","16":"0.9231318","17":"0.4857651","18":"0.07686816","19":"0.5142349","20":"186"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>performance_tbl %&gt;%
+    ggplot(aes(x = threshold)) +
+    geom_line(aes(y = precision), color = &quot;blue&quot;, size = 1) +
+    geom_line(aes(y = recall), color = &quot;red&quot;, size = 1) +
+    
+    # Insert line where precision and recall are harmonically optimized
+    geom_vline(xintercept = h2o.find_threshold_by_max_metric(performance_h2o, &quot;f1&quot;)) +
+    labs(title = &quot;Precision vs Recall&quot;, y = &quot;value&quot;) +
+    theme_new</code></pre>
+<p><img src="04_perf_meas_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre class="r"><code># extract_h2o_model_name_by_position &lt;- function(h2o_grid, n = 1, verbose = T) {
+# 
+#     model_name &lt;- h2o_grid %&gt;%
+#         as.tibble() %&gt;%
+#         slice_(n) %&gt;%
+#         pull(model_id)
+# 
+#     if (verbose) message(model_name)
+# 
+#     return(model_name)
+# 
+# }
+
+best_model &lt;- h2o.getModel(&quot;deeplearning_grid_01_model_8&quot;)
+
+best_model %&gt;% h2o.saveModel(path = &quot;04_perf_meas_model&quot;,force = TRUE)</code></pre>
+<pre><code>## [1] &quot;/Users/aeoles/Documents/GitHub/ml_journal-Rudan-Deng/04_perf_meas_model/deeplearning_grid_01_model_8&quot;</code></pre>
+<pre class="r"><code>load_model_performance_metrics &lt;- function(path, test_tbl) {
+    
+    model_h2o &lt;- h2o.loadModel(path)
+    perf_h2o  &lt;- h2o.performance(model_h2o, newdata = as.h2o(test_tbl)) 
+    
+    perf_h2o %&gt;%
+        h2o.metric() %&gt;%
+        as_tibble() %&gt;%
+        mutate(auc = h2o.auc(perf_h2o)) %&gt;%
+        select(tpr, fpr, auc, precision, recall)
+    
+}</code></pre>
+</div>
+<div id="plot" class="section level1">
+<h1><span class="header-section-number">4</span> PLOT</h1>
+<div id="roc-plot" class="section level2">
+<h2><span class="header-section-number">4.1</span> ROC Plot</h2>
+<pre class="r"><code>model_metrics_tbl &lt;- fs::dir_info(path = &quot;04_perf_meas_model&quot;) %&gt;%
+    select(path) %&gt;%
+    mutate(metrics = map(path, load_model_performance_metrics, test_tbl)) %&gt;%
+    unnest(cols = metrics)</code></pre>
+<pre><code>## 
+  |                                                                            
+  |                                                                      |   0%
+  |                                                                            
+  |======================================================================| 100%</code></pre>
+<pre class="r"><code>glimpse(model_metrics_tbl)</code></pre>
+<pre><code>## Rows: 400
+## Columns: 6
+## $ path      &lt;fs::path&gt; &quot;04_perf_meas_model/deeplearning_grid_01_model_8&quot;, &quot;04_…
+## $ tpr       &lt;dbl&gt; 0.005338078, 0.005338078, 0.008896797, 0.010676157, 0.014234…
+## $ fpr       &lt;dbl&gt; 0.0002379819, 0.0004759638, 0.0004759638, 0.0004759638, 0.00…
+## $ auc       &lt;dbl&gt; 0.8528961, 0.8528961, 0.8528961, 0.8528961, 0.8528961, 0.852…
+## $ precision &lt;dbl&gt; 0.7500000, 0.6000000, 0.7142857, 0.7500000, 0.8000000, 0.750…
+## $ recall    &lt;dbl&gt; 0.005338078, 0.005338078, 0.008896797, 0.010676157, 0.014234…</code></pre>
+<pre class="r"><code>model_metrics_tbl %&gt;%
+    mutate(
+        # Extract the model names
+        path = str_split(path, pattern = &quot;/&quot;, simplify = T)[,2] %&gt;% as_factor(),
+        auc  = auc %&gt;% round(3) %&gt;% as.character() %&gt;% as_factor()
+        ) %&gt;%
+    ggplot(aes(fpr, tpr, color = path, linetype = auc)) +
+    geom_line(size = 1) +
+
+    # just for demonstration purposes
+    geom_abline(color = &quot;red&quot;, linetype = &quot;dotted&quot;) +
+
+    theme_new +
+    theme(
+      legend.direction = &quot;vertical&quot;,
+      ) +
+    labs(
+        title = &quot;ROC Plot&quot;,
+        subtitle = &quot;Performance of 3 Top Performing Models&quot;
+    )</code></pre>
+<p><img src="04_perf_meas_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+</div>
+<div id="precision-vs-recall-plot" class="section level2">
+<h2><span class="header-section-number">4.2</span> Precision vs Recall Plot</h2>
+<pre class="r"><code>model_metrics_tbl %&gt;%
+    mutate(
+        path = str_split(path, pattern = &quot;/&quot;, simplify = T)[,2] %&gt;% as_factor(),
+        auc  = auc %&gt;% round(3) %&gt;% as.character() %&gt;% as_factor()
+    ) %&gt;%
+    ggplot(aes(recall, precision, color = path, linetype = auc)) +
+    geom_line(size = 1) +
+    theme_new + 
+    theme(
+      legend.direction = &quot;vertical&quot;,
+      ) +
+    labs(
+        title = &quot;Precision vs Recall Plot&quot;,
+        subtitle = &quot;Performance of 3 Top Performing Models&quot;
+    )</code></pre>
+<p><img src="04_perf_meas_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+</div>
+<div id="gain-plot" class="section level2">
+<h2><span class="header-section-number">4.3</span> Gain Plot</h2>
+<pre class="r"><code>gain_lift_tbl &lt;- performance_h2o %&gt;%
+    h2o.gainsLift() %&gt;%
+    as.tibble()
+
+## Gain Chart
+
+gain_transformed_tbl &lt;- gain_lift_tbl %&gt;% 
+    select(group, cumulative_data_fraction, cumulative_capture_rate, cumulative_lift) %&gt;%
+    select(-contains(&quot;lift&quot;)) %&gt;%
+    mutate(baseline = cumulative_data_fraction) %&gt;%
+    rename(gain     = cumulative_capture_rate) %&gt;%
+    # prepare the data for the plotting (for the color and group aesthetics)
+    pivot_longer(cols = c(gain, baseline), values_to = &quot;value&quot;, names_to = &quot;key&quot;)
+
+gain_transformed_tbl %&gt;%
+    ggplot(aes(x = cumulative_data_fraction, y = value, color = key)) +
+    geom_line(size = 1.5) +
+    labs(
+        title = &quot;Gain Chart&quot;,
+        x = &quot;Cumulative Data Fraction&quot;,
+        y = &quot;Gain&quot;
+    ) +
+    theme_new</code></pre>
+<p><img src="04_perf_meas_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+</div>
+<div id="lift-plot" class="section level2">
+<h2><span class="header-section-number">4.4</span> Lift Plot</h2>
+<pre class="r"><code>lift_transformed_tbl &lt;- gain_lift_tbl %&gt;% 
+    select(group, cumulative_data_fraction, cumulative_capture_rate, cumulative_lift) %&gt;%
+    select(-contains(&quot;capture&quot;)) %&gt;%
+    mutate(baseline = 1) %&gt;%
+    rename(lift = cumulative_lift) %&gt;%
+    pivot_longer(cols = c(lift, baseline), values_to = &quot;value&quot;, names_to = &quot;key&quot;)
+
+lift_transformed_tbl %&gt;%
+    ggplot(aes(x = cumulative_data_fraction, y = value, color = key)) +
+    geom_line(size = 1.5) +
+    labs(
+        title = &quot;Lift Chart&quot;,
+        x = &quot;Cumulative Data Fraction&quot;,
+        y = &quot;Lift&quot;
+    ) +
+    theme_new</code></pre>
+<p><img src="04_perf_meas_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+</div>
+<div id="dashboard-with-cowplot" class="section level2">
+<h2><span class="header-section-number">4.5</span> Dashboard with cowplot</h2>
+<pre class="r"><code>library(cowplot)
+library(glue)
+
+
+# set values to test the function while building it
+h2o_leaderboard &lt;- automl_models_h2o@leaderboard
+newdata &lt;- test_tbl
+order_by &lt;- &quot;auc&quot;
+max_models &lt;- 4
+size &lt;- 1
+
+plot_h2o_performance &lt;- function(h2o_leaderboard, newdata, order_by = c(&quot;auc&quot;, &quot;logloss&quot;),
+                                 max_models = 3, size = 1.5) {
+    
+    # Inputs
+    
+    leaderboard_tbl &lt;- h2o_leaderboard %&gt;%
+        as_tibble() %&gt;%
+        slice(1:max_models)
+    
+    newdata_tbl &lt;- newdata %&gt;%
+        as_tibble()
+    
+    # Selecting the first, if nothing is provided
+    order_by      &lt;- tolower(order_by[[1]]) 
+    
+    # Convert string stored in a variable to column name (symbol)
+    order_by_expr &lt;- rlang::sym(order_by)
+
+    # Turn of the progress bars ( opposite h2o.show_progress())
+    h2o.no_progress()
+    
+    # 1. Model metrics
+    
+    get_model_performance_metrics &lt;- function(model_id, test_tbl) {
+        
+        model_h2o &lt;- h2o.getModel(model_id)
+        perf_h2o  &lt;- h2o.performance(model_h2o, newdata = as.h2o(test_tbl))
+        
+        perf_h2o %&gt;%
+            h2o.metric() %&gt;%
+            as.tibble() %&gt;%
+            select(threshold, tpr, fpr, precision, recall)
+        
+    }
+    
+    model_metrics_tbl &lt;- leaderboard_tbl %&gt;%
+        mutate(metrics = map(model_id, get_model_performance_metrics, newdata_tbl)) %&gt;%
+        unnest(cols = metrics) %&gt;%
+        mutate(
+          model_id = as_factor(model_id) %&gt;% 
+                      # programmatically reorder factors depending on order_by
+                      fct_reorder(!! order_by_expr, 
+                                  .desc = ifelse(order_by == &quot;auc&quot;, TRUE, FALSE)),
+          auc      = auc %&gt;% 
+                      round(3) %&gt;% 
+                      as.character() %&gt;% 
+                      as_factor() %&gt;% 
+                      fct_reorder(as.numeric(model_id)),
+          logloss  = logloss %&gt;% 
+                      round(4) %&gt;% 
+                      as.character() %&gt;% 
+                      as_factor() %&gt;% 
+                      fct_reorder(as.numeric(model_id))
+        )
+    
+    
+    # 1A. ROC Plot
+    
+    p1 &lt;- model_metrics_tbl %&gt;%
+        ggplot(aes(fpr, tpr, color = model_id, linetype = !! order_by_expr)) +
+        geom_line(size = size) +
+        theme_new +
+        labs(title = &quot;ROC&quot;, x = &quot;FPR&quot;, y = &quot;TPR&quot;) +
+        theme(legend.direction = &quot;vertical&quot;) 
+        
+    
+    # 1B. Precision vs Recall
+    
+    p2 &lt;- model_metrics_tbl %&gt;%
+        ggplot(aes(recall, precision, color = model_id, linetype = !! order_by_expr)) +
+        geom_line(size = size) +
+        theme_new +
+        labs(title = &quot;Precision Vs Recall&quot;, x = &quot;Recall&quot;, y = &quot;Precision&quot;) +
+        theme(legend.position = &quot;none&quot;) 
+    
+    
+    # 2. Gain / Lift
+    
+    get_gain_lift &lt;- function(model_id, test_tbl) {
+        
+        model_h2o &lt;- h2o.getModel(model_id)
+        perf_h2o  &lt;- h2o.performance(model_h2o, newdata = as.h2o(test_tbl)) 
+        
+        perf_h2o %&gt;%
+            h2o.gainsLift() %&gt;%
+            as.tibble() %&gt;%
+            select(group, cumulative_data_fraction, cumulative_capture_rate, cumulative_lift)
+        
+    }
+    
+    gain_lift_tbl &lt;- leaderboard_tbl %&gt;%
+        mutate(metrics = map(model_id, get_gain_lift, newdata_tbl)) %&gt;%
+        unnest(cols = metrics) %&gt;%
+        mutate(
+            model_id = as_factor(model_id) %&gt;% 
+                fct_reorder(!! order_by_expr, 
+                            .desc = ifelse(order_by == &quot;auc&quot;, TRUE, FALSE)),
+            auc  = auc %&gt;% 
+                round(3) %&gt;% 
+                as.character() %&gt;% 
+                as_factor() %&gt;% 
+                fct_reorder(as.numeric(model_id)),
+            logloss = logloss %&gt;% 
+                round(4) %&gt;% 
+                as.character() %&gt;% 
+                as_factor() %&gt;% 
+                fct_reorder(as.numeric(model_id))
+        ) %&gt;%
+        rename(
+            gain = cumulative_capture_rate,
+            lift = cumulative_lift
+        ) 
+    
+    # 2A. Gain Plot
+    
+    p3 &lt;- gain_lift_tbl %&gt;%
+        ggplot(aes(cumulative_data_fraction, gain, 
+                          color = model_id, linetype = !! order_by_expr)) +
+        geom_line(size = size,) +
+        geom_segment(x = 0, y = 0, xend = 1, yend = 1, 
+                     color = &quot;red&quot;, size = size, linetype = &quot;dotted&quot;) +
+        theme_new +
+        expand_limits(x = c(0, 1), y = c(0, 1)) +
+        labs(title = &quot;Gain&quot;,
+             x = &quot;Cumulative Data Fraction&quot;, y = &quot;Gain&quot;) +
+        theme(legend.position = &quot;none&quot;)
+    
+    # 2B. Lift Plot
+    
+    p4 &lt;- gain_lift_tbl %&gt;%
+        ggplot(aes(cumulative_data_fraction, lift, 
+                          color = model_id, linetype = !! order_by_expr)) +
+        geom_line(size = size) +
+        geom_segment(x = 0, y = 1, xend = 1, yend = 1, 
+                     color = &quot;red&quot;, size = size, linetype = &quot;dotted&quot;) +
+        theme_new +
+        expand_limits(x = c(0, 1), y = c(0, 1)) +
+        labs(title = &quot;Lift&quot;,
+             x = &quot;Cumulative Data Fraction&quot;, y = &quot;Lift&quot;) +
+        theme(legend.position = &quot;none&quot;) 
+    
+    
+    # Combine using cowplot
+    
+    # cowplot::get_legend extracts a legend from a ggplot object
+    p_legend &lt;- get_legend(p1)
+    # Remove legend from p1
+    p1 &lt;- p1 + theme(legend.position = &quot;none&quot;)
+    
+    # cowplot::plt_grid() combines multiple ggplots into a single cowplot object
+    p &lt;- cowplot::plot_grid(p1, p2, p3, p4, ncol = 2)
+    
+    # cowplot::ggdraw() sets up a drawing layer
+    p_title &lt;- ggdraw() + 
+    
+        # cowplot::draw_label() draws text on a ggdraw layer / ggplot object
+        draw_label(&quot;H2O Model Metrics&quot;, size = 18, fontface = &quot;bold&quot;, 
+                   color = &quot;#2C3E50&quot;)
+    
+    p_subtitle &lt;- ggdraw() + 
+        draw_label(glue(&quot;Ordered by {toupper(order_by)}&quot;), size = 10,  
+                   color = &quot;#2C3E50&quot;)
+    
+    # Combine everything
+    ret &lt;- plot_grid(p_title, p_subtitle, p, p_legend, 
+    
+                     # Adjust the relative spacing, so that the legends always fits
+                     ncol = 1, rel_heights = c(0.05, 0.05, 1, 0.05 * max_models))
+    
+    h2o.show_progress()
+    
+    return(ret)
+    
+}
+
+automl_models_h2o@leaderboard %&gt;%
+    plot_h2o_performance(newdata = test_tbl, order_by = &quot;logloss&quot;, 
+                         size = 0.5, max_models = 4)</code></pre>
+<p><img src="04_perf_meas_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
